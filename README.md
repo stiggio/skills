@@ -27,8 +27,11 @@ Until then, point your agent at this directory directly.
 | `stigg` | **Start here.** Umbrella entry point with the search-first rule, decision tree (MCP vs CLI vs SDK vs raw API), and the Stigg core-concepts glossary. |
 | `stigg-mcp` | Connect the Stigg MCP server (`https://mcp.stigg.io`) to Claude Code, Claude Desktop, ChatGPT, Cursor, VS Code, Windsurf, or Codex; pick the right key; smoke-test. |
 | `stigg-api` | Authentication, REST vs GraphQL selection, SDK selection (Node + React canonical; raw HTTP for everything else), rate limits, pagination, idempotency. |
+| `stigg-pricing-modeling` | Model the catalog: features, plans, addons, products, charges, coupons, custom credit currencies, price localization. MCP-first rule of thumb. |
+| `stigg-entitlements` | Runtime gating + the raw-events vs calculated-usage rule + cache & fallback strategy for production. Owns promotional entitlements. |
+| `stigg-subscriptions` | Lifecycle ops: provision, preview, update, cancel, trials, multi-active subscriptions, plan-version migration. |
 
-More skills are added in subsequent commits — pricing modeling, entitlements & usage, subscriptions, credits, widgets, webhooks, a pricing-strategy advisor, an external-system migration playbook, and composed recipes.
+More skills are added in subsequent commits — credits, widgets, webhooks, a pricing-strategy advisor, an external-system migration playbook, and composed recipes.
 
 ## Authoritative sources
 
