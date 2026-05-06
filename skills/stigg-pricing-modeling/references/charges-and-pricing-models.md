@@ -93,7 +93,7 @@ Each charge can carry prices in multiple billing currencies. The customer's bill
 
 A single plan often has *several* charges:
 
-```
+```text
 Pro plan:
   • Flat fee:         $49 / month
   • Per-unit:         $10 / seat / month

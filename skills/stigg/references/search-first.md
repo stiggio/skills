@@ -31,7 +31,7 @@ If the agent has the docs MCP available, prefer it over generic web fetches:
 
 Common patterns:
 
-```
+```bash
 # Find pages mentioning rate limits
 rg -il "rate limit" /
 
@@ -52,7 +52,7 @@ Last resort, only when neither MCP is available and `llms.txt` doesn't disambigu
 
 ## How to integrate the rule into your turn
 
-```
+```text
 User asks: "Add Stigg to gate this feature."
 1. Search:  "feature gating" + "entitlement check" via Mintlify MCP / llms.txt.
 2. Open the page that matches the user's stack (Node SDK / React SDK / REST).

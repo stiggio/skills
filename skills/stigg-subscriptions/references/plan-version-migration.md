@@ -2,7 +2,7 @@
 
 Moving an **existing Stigg subscription** from plan version *N* to plan version *N+1* after a publish.
 
-> This is **routine** ops — happens whenever the catalog ships a new version. **Distinct from** importing customers/subscriptions from an external billing system (Stripe / Recurly / Zuora / custom). That's the `stigg-import-from-external-system` skill.
+> This is **routine** ops — happens whenever the catalog ships a new version.
 
 ## Why migration is opt-in
 
@@ -73,8 +73,7 @@ Both work together — the publish-time policy controls the *default* behavior; 
 | Migration | Skill | What it is |
 |---|---|---|
 | Plan-version migration | **this skill** (`stigg-subscriptions`) | Moving an existing Stigg sub to a new plan version after a publish. Routine. |
-| External-system import | `stigg-import-from-external-system` | Bringing customers/subscriptions from Stripe / Recurly / Zuora / custom into Stigg. One-off. |
-| Multi-billing-provider migration | `documentation/native-integrations/billing/...` | Moving a customer between billing providers (e.g. Stripe → Zuora) within Stigg. |
+| Multi-billing-provider migration | [docs.stigg.io](https://docs.stigg.io) (native-integrations / billing) | Moving a customer between billing providers (e.g. Stripe → Zuora) within Stigg. |
 
 ## Common mistakes
 
@@ -83,5 +82,4 @@ Both work together — the publish-time policy controls the *default* behavior; 
 | Skipping migration after every publish | SKU sprawl. Schedule periodic migrations. |
 | Migrating Paid → Custom and expecting Stripe to be canceled | It isn't — only Stigg metadata moves. Coordinate with your billing flow. |
 | Migrating immediately on a high-price-delta change without warning customers | Surprise charges. Warn first; consider end-of-period instead. |
-| Reaching for this skill when bringing data in from Stripe / Zuora | Wrong skill. Use `stigg-import-from-external-system`. |
 | Treating "latest version" as a moving target on a single SDK call | The SDK / API resolves "latest" at call time. If a new version is published mid-rollout, your bulk migration may target it. Lock the target version explicitly when authoring large rollouts. |

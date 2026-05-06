@@ -4,7 +4,7 @@ The minimum vocabulary needed to model anything in Stigg. Sourced from [docs.sti
 
 ## Entity relationships (text view)
 
-```
+```text
 Product           ──has─→ Plan, Add-on
 Plan / Add-on     ──grants─→ Entitlement
 Entitlement       ──configures─→ Feature

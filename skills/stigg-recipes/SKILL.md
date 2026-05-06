@@ -41,7 +41,6 @@ For each step, the recipe **points at the pillar skill** that owns the implement
 
 - Single-skill tasks: provisioning a customer (`stigg-subscriptions`), gating one feature (`stigg-entitlements`), creating a credit currency (`stigg-credits`).
 - Pricing strategy / model selection — that's `stigg-pricing-expert`. Recipes assume the model is chosen.
-- Migration from an external system — that's `stigg-import-from-external-system`. Recipes are for green-field flows.
 
 ## Common Mistakes
 

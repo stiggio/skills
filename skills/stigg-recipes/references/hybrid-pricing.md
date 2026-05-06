@@ -4,7 +4,7 @@
 
 ## A canonical hybrid plan
 
-```
+```text
 Pro plan:
   • Flat fee:         $49 / month                ← predictable base
   • Per-unit:         $10 / seat / month         ← scales with team

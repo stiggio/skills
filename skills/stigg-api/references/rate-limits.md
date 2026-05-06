@@ -19,7 +19,7 @@ Rate limits and the "Using Stigg at Scale" guidance evolve. **Always re-fetch th
 
 ### Read path (gating)
 
-```
+```text
 Incoming request → SDK in-memory cache → (miss) → Stigg → cache → respond
                                        ↓
                                    on transport error: SDK fallback (last-known-good)
@@ -27,7 +27,7 @@ Incoming request → SDK in-memory cache → (miss) → Stigg → cache → resp
 
 ### Write path (usage)
 
-```
+```text
 Customer action → enqueue event locally (durable) → batch flush to events.report
                                                   ↓
                                            on 429 / 5xx: backoff + retry

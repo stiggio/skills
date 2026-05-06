@@ -12,7 +12,7 @@ Good skills are **opinionated and specific**. They tell the agent what to do, no
 
 Each skill lives under `skills/`:
 
-```
+```text
 skills/
   stigg-thing/
     SKILL.md              # Main skill file (required)
@@ -62,15 +62,15 @@ This scope keeps verification rounds tractable and avoids cross-language field-n
 4. **Honest about limitations.** Include "when **NOT** to use this skill" — so agents don't load it for the wrong task.
 5. **Token-efficient — by skill type:**
    - **Umbrella skill** (`stigg`) — loads on every Stigg conversation. Aim for **≤ 1,000 words**.
-   - **Pillar skills** (the ones that own a substantive slice of Stigg — auth, MCP setup, pricing modeling, entitlements, subscriptions, credits, widgets, external-system import) — these are dense and single-source-of-truth for their domain. **≤ 1,800 words** is reasonable; aim lower when you can. Move heavy content to `references/*.md`.
+   - **Pillar skills** (the ones that own a substantive slice of Stigg — auth, MCP setup, pricing modeling, entitlements, subscriptions, credits, widgets, webhooks) — these are dense and the single source of truth for their domain. **≤ 1,800 words** is reasonable; aim lower when you can. Move heavy content to `references/*.md`.
    - **Advisory skills** (`stigg-pricing-expert`) and **composer skills** (`stigg-recipes`) — should stay tight. **≤ 1,500 words** for advisory; **≤ 800 words** for composers (recipes orchestrate references rather than carry content).
    - Run `wc -w skills/<name>/SKILL.md` to verify before submitting.
-6. **No internal info leaks.** This repo is customer-facing. Nothing about `apps/stigg-api` code paths, internal i18n, or other Stigg engineering tooling.
-7. **Tested against real usage.** Verify an agent can actually follow your skill to complete the task. Snippets must work as-is.
+6. **No internal info leaks.** This repo is public — keep skills focused on what customers and integrators need.
+7. **Tested against real usage.** Verify an agent can actually follow your skill to complete the task end-to-end. Snippets must work as-is.
 
 ## Submitting a skill
 
-1. Fork and create a branch.
+1. Fork the repo and create a branch.
 2. Add your skill directory under `skills/`.
 3. Update the **Available skills** table in `README.md`.
 4. Open a PR with:
@@ -78,7 +78,7 @@ This scope keeps verification rounds tractable and avoids cross-language field-n
    - **Why it's useful** — what gap does it fill?
    - **How you tested it** — did an agent successfully use it end-to-end?
 
-We review for structure, accuracy, and scope. Expect feedback — we'd rather iterate than merge a mediocre skill.
+We review for structure, accuracy, and scope. Expect feedback — we'd rather iterate than merge a skill that isn't ready.
 
 ## Conventions
 
@@ -90,17 +90,10 @@ We review for structure, accuracy, and scope. Expect feedback — we'd rather it
 - Standard markdown only — no HTML, no inline scripts.
 - Do not embed API keys, customer IDs, or other secrets in examples; use placeholders like `<YOUR_API_KEY>`.
 
-## Ideas for new skills
-
-If you're not sure what to build, here are areas that need coverage:
-
-- Recipe skills that compose existing ones (e.g., end-to-end freemium, hybrid pricing, AI-credits monetization).
-- Migration skills from a specific external system (Stripe-only, Recurly, Chargebee, Zuora).
-- Pricing-strategy advisors (mapping a customer's product to the right Stigg pricing model).
-- Deeper integration skills *within* the canonical scope — e.g., Stigg + Next.js App Router patterns (using `@stigg/react-sdk`), Stigg + Stripe Elements checkout flows, Sidecar deployment recipes.
-
-For runtimes outside the canonical scope (Python, Go, Java, Ruby, .NET, Vue, Embed), point at [docs.stigg.io](https://docs.stigg.io) rather than mirror the SDK matrix here.
-
 ## Questions?
 
-Open an issue or visit [docs.stigg.io](https://docs.stigg.io).
+Open an issue on this repo, or visit [docs.stigg.io](https://docs.stigg.io).
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [MIT License](./LICENSE).

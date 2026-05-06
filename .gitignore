@@ -7,6 +7,7 @@
 *.swp
 *.swo
 *~
+.history/
 
 # Logs
 *.log

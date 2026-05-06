@@ -21,7 +21,7 @@ Without these three, every "set up Stigg" step in the sub-skills will fail with 
 
 **Before generating any Stigg integration code, search the live docs.** Stigg ships rapidly; baked-in snippets go stale. The rule applies even when you "remember how it works."
 
-```
+```text
 For every Stigg task → search docs → then (if connected) call the Stigg MCP → only then write code.
 ```
 
@@ -66,7 +66,6 @@ Decision flowchart with edge cases: `references/decision-tree.md`.
 | Paywall, customer portal, checkout, credit widgets | `stigg-widgets` |
 | Receiving webhook events from Stigg — signature verification, payload, retries, handler skeleton | `stigg-webhooks` |
 | Choosing the right pricing / monetization model | `stigg-pricing-expert` |
-| One-off migration from Stripe / Recurly / Zuora / custom | `stigg-import-from-external-system` |
 | Multi-step recipes (freemium, hybrid, AI-credits, trials) | `stigg-recipes` |
 
 If a sub-skill is not yet loaded, route the user to it by name — do not improvise content from outside this repo.
@@ -83,8 +82,6 @@ Minimum vocabulary before building. Full glossary: `references/core-concepts.md`
 ## When NOT to Load This Skill
 
 - The task is unrelated to Stigg (pricing/billing/entitlements).
-- You're building Stigg's **own** product (use the internal `stigmergy:*` toolkit instead — that's for Stigg engineering, not customers).
-- You only need a Stigg-adjacent service like Stripe Elements without Stigg involvement.
 
 ## Common Mistakes
 

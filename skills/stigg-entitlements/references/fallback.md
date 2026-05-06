@@ -4,7 +4,7 @@ Entitlement checks are on the critical path. They must remain reliable when enti
 
 ## Layers of resilience
 
-```
+```text
 App  →  In-memory SDK cache       (default; refreshed by polling / live updates)
      →  Persistent cache (Redis)  (optional; Node SDK + Sidecar)
      →  Sidecar service           (optional; separate process / deployment)

@@ -37,7 +37,7 @@ Re-fetch the docs and the Storybook for the current full prop surface and the la
 
 ## Where Checkout sits in the flow
 
-```
+```text
 Paywall  →  onPlanSelected(intent: UPGRADE_PLAN)
             ↓
       <Checkout planId="…" />

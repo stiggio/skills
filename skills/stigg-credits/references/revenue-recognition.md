@@ -11,7 +11,7 @@ Plus an **append-only ledger** capturing every burn / expiry / revocation. Use t
 
 ## The math
 
-```
+```text
 Deferred revenue   = amount_remaining × cost_basis            (paid grants only)
 Recognized revenue = consumed_in_period × cost_basis
 Breakage           = expired_in_period × cost_basis           (per your policy)
@@ -23,21 +23,21 @@ Promotional grants have **zero `cost_basis`** → never affect revenue.
 
 ### On purchase / grant of paid credits
 
-```
+```text
 Dr  Cash / AR
 Cr  Deferred revenue        (for amount_granted × cost_basis)
 ```
 
 ### On consumption
 
-```
+```text
 Dr  Deferred revenue
 Cr  Revenue                 (for consumed × cost_basis)
 ```
 
 ### On expiry (breakage)
 
-```
+```text
 Dr  Deferred revenue
 Cr  Revenue                 (for expired × cost_basis, timing per policy)
 ```

@@ -22,7 +22,7 @@ If your usage is uniform (`1 API call = 1 credit`), use a regular **consumption 
 
 ### Multi-input processing
 
-```
+```text
 credits_used = (a × documents) + (b × emails) + (c × images)
 ```
 
@@ -30,7 +30,7 @@ Use when one event represents multiple workload types you bill differently.
 
 ### Multi-model LLM operations
 
-```
+```text
 credits_used = (1.1 × model1_tokens) + (1.5 × model2_tokens) + (5 × model3_tokens)
 ```
 
@@ -38,7 +38,7 @@ Use when a single agent run touches multiple models with different cost weights.
 
 ### Uniform token-based deduction
 
-```
+```text
 credits_used = agent1_tokens + agent2_tokens + agent3_tokens
 ```
 
