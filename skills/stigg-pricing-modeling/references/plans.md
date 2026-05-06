@@ -41,13 +41,6 @@ Migration types at publish time include:
 
 The exact set of supported migration types evolves — re-fetch the publish-plan page in the docs before authoring the rollout. Migration of a *single* subscription to the latest version (after publish) is covered in `stigg-subscriptions/references/plan-version-migration.md`.
 
-## Plan-version migration vs external-system import
-
-Two distinct migrations, sometimes confused:
-
-- **Plan-version migration** — moving an existing Stigg subscription from plan version *N* to *N+1*. Routine, ongoing. Covered in `stigg-subscriptions`.
-- **External-system import** — bringing customers and subscriptions from Stripe / Recurly / Zuora / a custom system into Stigg. One-off. Covered in the `stigg-import-from-external-system` skill.
-
 ## Free plan specifics
 
 - No payment method required.

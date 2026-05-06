@@ -118,7 +118,6 @@ For each step, **search the docs first**, then call the MCP. The order matters b
 - Provisioning, updating, or canceling a subscription → use `stigg-subscriptions`.
 - Picking *which* monetization model fits the customer's product → `stigg-pricing-expert`.
 - Operating credit grants, ledger, auto-recharge in production → `stigg-credits`. (This skill covers the *modeling* of credit currencies and credit charges in the catalog.)
-- Migrating customers / subscriptions in from Stripe / Recurly / Zuora / custom → `stigg-import-from-external-system`.
 
 ## Common Mistakes
 

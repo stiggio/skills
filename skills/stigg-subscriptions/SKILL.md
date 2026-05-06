@@ -1,11 +1,11 @@
 ---
 name: stigg-subscriptions
-description: Use when operating subscriptions in Stigg — provision a customer onto a plan, preview a subscription's pricing, update an active subscription (plan, add-ons, period, quantities, coupons, spend limits), cancel, run free trials and convert them to paid, support multiple subscriptions per customer (workspaces / projects), or migrate an existing subscription to the latest published plan version. Triggers include "provisionSubscription", "preview a subscription", "upgrade", "downgrade", "cancel subscription", "schedule cancellation", "trial expired", "migrate subscription to latest version". Skip for one-off imports from external billing systems (Stripe / Recurly / Zuora / custom) — that's the stigg-import-from-external-system skill.
+description: Use when operating subscriptions in Stigg — provision a customer onto a plan, preview a subscription's pricing, update an active subscription (plan, add-ons, period, quantities, coupons, spend limits), cancel, run free trials and convert them to paid, support multiple subscriptions per customer (workspaces / projects), or migrate an existing subscription to the latest published plan version. Triggers include "provisionSubscription", "preview a subscription", "upgrade", "downgrade", "cancel subscription", "schedule cancellation", "trial expired", "migrate subscription to latest version".
 ---
 
 # Stigg Subscriptions — Lifecycle Operations
 
-This skill covers day-to-day subscription operations: provision, preview, update, cancel, trials, multi-subscription products, and **plan-version migration** (moving an existing sub from plan v1 to plan v2 after a publish). It does **not** cover one-off imports from external systems — that's the `stigg-import-from-external-system` skill.
+This skill covers day-to-day subscription operations: provision, preview, update, cancel, trials, multi-subscription products, and **plan-version migration** (moving an existing sub from plan v1 to plan v2 after a publish).
 
 ## Before You Start
 
@@ -171,7 +171,7 @@ Once enabled (it's a **product-level setting**, fixed at product creation):
 
 ## Plan-Version Migration (Catalog v1 → v2)
 
-When a plan is republished, existing subscriptions stay on the old version unless migrated. **Routine, ongoing operation** — do not confuse with one-off external-system imports.
+When a plan is republished, existing subscriptions stay on the old version unless migrated. **Routine, ongoing operation.**
 
 > **Catalog-side publish flow** (drafts, version policy, what triggers grandfathering) lives in `stigg-pricing-modeling/references/plans.md`. This section is the *subscription-side* migration mechanics.
 
@@ -199,7 +199,6 @@ Detailed migration reference: `references/plan-version-migration.md`.
 
 - Modeling features / plans / add-ons → `stigg-pricing-modeling`.
 - Runtime entitlement checks / usage reporting → `stigg-entitlements`.
-- One-off imports from Stripe / Recurly / Zuora / custom into Stigg → `stigg-import-from-external-system`.
 - Strategic advice on pricing models → `stigg-pricing-expert`.
 
 ## Common Mistakes
@@ -210,7 +209,6 @@ Detailed migration reference: `references/plan-version-migration.md`.
 | Treating scheduled updates as a queue | A new update **replaces** scheduled ones. If you need a queue, model it in your app. |
 | Cancelling immediately when the product policy says end-of-period | Use the product's default; opt-in to immediate only when you mean it. |
 | Trying to cancel a custom-priced plan at end of period | Not supported by the cancellation modal. Use a specific date or coordinate with billing. |
-| Confusing plan-version migration with external import | Plan-version migration = within Stigg, after a publish (this skill). External import = one-off, from Stripe/etc. (`stigg-import-from-external-system`). |
 | Self-serve trial for a customer who's already paid | Not eligible. Admin override needed. Surface the right CTA in your app. |
 | Skipping `previewSubscription` before charging | Customers expect to see what they'll pay. Preview first, then provision. |
 | Not setting `billingCycleAnchor: NOW` on a major upgrade | The customer's bill cycle drifts. Reset explicitly when the change should start a fresh period. |
