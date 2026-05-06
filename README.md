@@ -30,8 +30,12 @@ Until then, point your agent at this directory directly.
 | `stigg-pricing-modeling` | Model the catalog: features, plans, addons, products, charges, coupons, custom credit currencies, price localization. MCP-first rule of thumb. |
 | `stigg-entitlements` | Runtime gating + the raw-events vs calculated-usage rule + cache & fallback strategy for production. Owns promotional entitlements. |
 | `stigg-subscriptions` | Lifecycle ops: provision, preview, update, cancel, trials, multi-active subscriptions, plan-version migration. |
-
-More skills are added in subsequent commits — credits, widgets, webhooks, a pricing-strategy advisor, an external-system migration playbook, and composed recipes.
+| `stigg-credits` | Credit currencies, grants, ledger, consumption logic, custom formulas, auto-recharge, seat-based pools, billing integration, revenue recognition. |
+| `stigg-widgets` | Drop-in UI: paywall, customer portal, checkout, credit widgets. Uses the live Storybook index at `widgets.stigg.io/index.json`. |
+| `stigg-webhooks` | Receive webhook events from Stigg — signature verification (`Stigg-Webhooks-Secret`), payload envelope, retry semantics, idempotency via `messageId`, handler skeleton. |
+| `stigg-pricing-expert` | Advisory — picks the right monetization model and hands off to implementation skills. |
+| `stigg-import-from-external-system` | One-off migration from Stripe / Recurly / Chargebee / Zuora / custom in-house systems into Stigg. Strangler Fig pattern. |
+| `stigg-recipes` | Composed end-to-end workflows — freemium, checkout, hybrid pricing, AI-credits monetization, trial with addons, payment links. |
 
 ## Authoritative sources
 
