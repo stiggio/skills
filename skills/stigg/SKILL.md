@@ -21,7 +21,7 @@ Without these three, every "set up Stigg" step in the sub-skills will fail with 
 
 **Before generating any Stigg integration code, search the live docs.** Stigg ships rapidly; baked-in snippets go stale. The rule applies even when you "remember how it works."
 
-```
+```text
 For every Stigg task → search docs → then (if connected) call the Stigg MCP → only then write code.
 ```
 

@@ -4,7 +4,7 @@ A concrete decision flow. Use after the **value metric** is identified (see `val
 
 ## The flow
 
-```
+```text
 Value metric in hand?
 ├── No  → go back to value-metric discovery
 └── Yes

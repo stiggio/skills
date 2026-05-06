@@ -27,7 +27,7 @@ Created webhooks **activate immediately**. Use **Send test event** (⋮ menu on 
 
 Every webhook event carries a header:
 
-```
+```text
 Stigg-Webhooks-Secret: <secret>
 ```
 

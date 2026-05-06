@@ -4,7 +4,7 @@ Stigg exposes several surfaces. Picking the wrong one is a common time sink.
 
 ## Quick decision
 
-```
+```text
 Is the goal …
 ├── Setting up Stigg, exploring, modeling pricing, one-off ops?
 │     → Stigg MCP server   (skill: stigg-mcp)

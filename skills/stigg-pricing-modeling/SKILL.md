@@ -99,7 +99,7 @@ Plan and add-on edits use a **draft → published-version** flow:
 
 A typical end-to-end (over the MCP):
 
-```
+```text
 1. Define features.            ← reusable building blocks
 2. Group features (optional).  ← for shared entitlements across plans
 3. Create the product.         ← anchors plans & add-ons

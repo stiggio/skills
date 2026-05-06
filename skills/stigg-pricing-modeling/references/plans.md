@@ -28,7 +28,7 @@ A product can carry all three plan types in parallel.
 
 Plan edits **never modify the live version directly**:
 
-```
+```text
 Open draft  →  edit (entitlements / prices / metadata)  →  Publish  →  new version is active
                                                           ↳ pick migration policy
                                                             for existing subs

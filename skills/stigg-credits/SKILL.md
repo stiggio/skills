@@ -13,7 +13,7 @@ Per the umbrella `stigg` skill: **search first.** The credits surface evolves qu
 
 ## Mental Model — Five Pieces
 
-```
+```text
                               ┌──────────────────────────────────┐
                               │   Credit currency (the unit)     │
                               │   "AI tokens", "API credits",    │
@@ -102,7 +102,7 @@ Detailed behavior + worked example: `references/consumption.md`.
 
 For variable-cost workloads (multi-model LLM ops, multi-input processing, weighted token costs), define a **custom formula** instead of a fixed conversion rate:
 
-```
+```text
 credits_used = (a × documents) + (b × emails) + (c × images)
 credits_used = (1.1 × model1_tokens) + (1.5 × model2_tokens) + (5 × model3_tokens)
 ```
@@ -161,7 +161,7 @@ Common flows (self-serve top-up, sales-led invoice, automatic top-up): `referenc
 
 Stigg gives Finance an auditable trail. Per grant: `amount_granted`, `amount_remaining`, `amount_consumed`, `expires_at`, `category`, `cost_basis` (per-unit). The append-only ledger captures every burn / expiry / revocation.
 
-```
+```text
 Deferred revenue   = amount_remaining × cost_basis      (paid grants only)
 Recognized revenue = consumed_in_period × cost_basis
 Breakage           = expired_in_period × cost_basis     (per your policy)

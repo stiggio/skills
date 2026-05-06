@@ -12,7 +12,7 @@ Good skills are **opinionated and specific**. They tell the agent what to do, no
 
 Each skill lives under `skills/`:
 
-```
+```text
 skills/
   stigg-thing/
     SKILL.md              # Main skill file (required)

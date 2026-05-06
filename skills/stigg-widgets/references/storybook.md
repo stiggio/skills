@@ -4,7 +4,7 @@ The Storybook at `https://widgets.stigg.io/` is the **live, authoritative refere
 
 ## Discovery — `index.json`
 
-```
+```text
 GET https://widgets.stigg.io/index.json
 ```
 
@@ -12,7 +12,7 @@ Returns the full story index. Each story has an ID and a component name. **Alway
 
 ## Story IDs — naming pattern
 
-```
+```text
 widgets-<component>--<variant>
 ```
 
