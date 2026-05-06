@@ -82,8 +82,6 @@ Minimum vocabulary before building. Full glossary: `references/core-concepts.md`
 ## When NOT to Load This Skill
 
 - The task is unrelated to Stigg (pricing/billing/entitlements).
-- You're building Stigg's **own** product (use the internal `stigmergy:*` toolkit instead — that's for Stigg engineering, not customers).
-- You only need a Stigg-adjacent service like Stripe Elements without Stigg involvement.
 
 ## Common Mistakes
 
