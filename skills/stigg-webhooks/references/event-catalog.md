@@ -93,7 +93,7 @@ Curated map of webhook events by domain. **Names evolve** — always re-confirm 
 |---|---|
 | `third_party_sync_failed` | Sync to a connected billing provider (Stripe, Zuora, etc.) failed — investigate the integration |
 
-## Production oncall watch list
+## Production alerting checklist
 
 A pragmatic subset to alert on:
 
