@@ -73,7 +73,7 @@ Both work together — the publish-time policy controls the *default* behavior; 
 | Migration | Skill | What it is |
 |---|---|---|
 | Plan-version migration | **this skill** (`stigg-subscriptions`) | Moving an existing Stigg sub to a new plan version after a publish. Routine. |
-| Multi-billing-provider migration | `documentation/native-integrations/billing/...` | Moving a customer between billing providers (e.g. Stripe → Zuora) within Stigg. |
+| Multi-billing-provider migration | [docs.stigg.io](https://docs.stigg.io) (native-integrations / billing) | Moving a customer between billing providers (e.g. Stripe → Zuora) within Stigg. |
 
 ## Common mistakes
 
