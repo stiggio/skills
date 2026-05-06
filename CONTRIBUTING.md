@@ -65,7 +65,7 @@ This scope keeps verification rounds tractable and avoids cross-language field-n
    - **Pillar skills** (the ones that own a substantive slice of Stigg — auth, MCP setup, pricing modeling, entitlements, subscriptions, credits, widgets, webhooks) — these are dense and the single source of truth for their domain. **≤ 1,800 words** is reasonable; aim lower when you can. Move heavy content to `references/*.md`.
    - **Advisory skills** (`stigg-pricing-expert`) and **composer skills** (`stigg-recipes`) — should stay tight. **≤ 1,500 words** for advisory; **≤ 800 words** for composers (recipes orchestrate references rather than carry content).
    - Run `wc -w skills/<name>/SKILL.md` to verify before submitting.
-6. **No internal info leaks.** This repo is public — keep skills focused on what customers and integrators need. Don't reference Stigg's internal code paths, engineering tooling, or non-public APIs.
+6. **No internal info leaks.** This repo is public — keep skills focused on what customers and integrators need.
 7. **Tested against real usage.** Verify an agent can actually follow your skill to complete the task end-to-end. Snippets must work as-is.
 
 ## Submitting a skill
