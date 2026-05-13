@@ -25,12 +25,6 @@ Once installed, the agent auto-discovers every skill and the umbrella `stigg` sk
 For Claude Desktop, Claude.ai, or any client that consumes the [Agent Skills format](https://agentskills.io) directly:
 
 ```bash
-# Install a specific skill
-npx skills add stiggio/skills --skill stigg
-npx skills add stiggio/skills --skill stigg-mcp
-npx skills add stiggio/skills --skill stigg-api
-
-# Install all skills
 npx skills add stiggio/skills --all
 ```
 
