@@ -4,7 +4,7 @@ This file covers the *catalog* shape of credits — recurring grants attached to
 
 ## Where credit currencies appear in the catalog
 
-A credit currency (e.g. "AI tokens") is **defined in the catalog** under Product Catalog → Credits — see `stigg-credits` for the definition surface. Within plan / add-on configs, you reference an existing credit currency in two places:
+A credit currency (e.g. "AI tokens") is **defined in the catalog** — through the Stigg MCP (preferred for AI-assisted dev) or the Stigg app under Product Catalog → Credits. The MCP exposes the full lifecycle (create / update / archive / unarchive / list / list associated entities) — see `stigg-credits` for the operational details. Within plan / add-on configs, you reference an existing credit currency in two places:
 
 - **Consumption mappings** are **configured on the plan** (and on each add-on) — not on the metered feature, not on the credit currency. Each plan that uses a metered feature decides how that feature consumes credits ("1 API call = 2 AI tokens", or a custom formula). The same metered feature can have different consumption rules across different plans. See `stigg-credits/references/consumption.md` for burn-order rules and `stigg-credits/references/custom-formulas.md` for non-uniform pricing.
 - **Credit charges** on plans / add-ons — see `charges-and-pricing-models.md` (the credits charge type).

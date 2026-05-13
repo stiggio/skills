@@ -1,6 +1,6 @@
 ---
 name: stigg-mcp
-description: Use when connecting an AI client (Claude Code, Claude Desktop, ChatGPT, Cursor, VS Code, Windsurf, Codex, or any MCP-compatible client) to the Stigg MCP server at https://mcp.stigg.io. Triggers include "set up Stigg MCP", "connect Stigg to Claude", "install Stigg MCP", "stigg mcp add", "/mcp doesn't show stigg", or any first-time Stigg-with-an-agent setup. Also use when deciding between the Stigg CLI and the Stigg MCP server.
+description: SETUP skill — use when connecting an AI client to the Stigg MCP server at https://mcp.stigg.io, or when picking between the Stigg CLI and the Stigg MCP server. Covers Claude Code, Claude Desktop, ChatGPT, Cursor, VS Code, Windsurf, Codex, Continue.dev, and any MCP-compatible client. Triggers: "set up Stigg MCP", "install Stigg MCP", "connect Stigg to Claude", "connect Stigg to Cursor", "add Stigg MCP server", "stigg mcp add", "/mcp doesn't show stigg", "Stigg MCP not connecting", "X-API-KEY header for Stigg MCP", "@stigg/typescript-mcp", "stdio bridge for Stigg", "Stigg CLI vs MCP", "Stigg HTTP transport", or any first-time Stigg-with-an-agent setup. Skip for using the Stigg MCP after it's already connected — operational work belongs to the relevant pillar (entitlements, credits, pricing-modeling, subscriptions, widgets).
 ---
 
 # Stigg MCP — Connect Once, Use Everywhere

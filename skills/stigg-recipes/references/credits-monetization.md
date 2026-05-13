@@ -16,7 +16,7 @@
 
 ### 1. Define the credit currency (`stigg-credits`)
 
-In Stigg: **Product Catalog → Credits → + Add credit type.** Pick a stable ID (`ai-tokens`), display names ("token" / "tokens").
+Through the **Stigg MCP** — preferred for AI-assisted dev — ask the agent to create a credit currency with a stable ID (`ai-tokens`) and singular/plural display names ("token" / "tokens"). The MCP exposes the full lifecycle (define / update / archive / unarchive / list / list associated entities). Re-check the live MCP tool listing for current operation names. UI fallback: **Product Catalog → Credits → + Add credit type** in the Stigg app.
 
 ### 2. Model the metered feature
 
