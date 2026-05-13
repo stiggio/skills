@@ -20,8 +20,6 @@ The skills ship as a Claude Code plugin via Stigg's marketplace:
 
 Once installed, the agent auto-discovers every skill and the umbrella `stigg` skill routes to the right pillar.
 
-> **Migrating from a previous `npx skills add` install?** Remove the old skill folders first: `rm -rf ~/.claude/skills/stigg*`. Otherwise the legacy copies will compete with the plugin's.
-
 ### Agent skills via npx
 
 For Claude Desktop, Claude.ai, or any client that consumes the [Agent Skills format](https://agentskills.io) directly:
