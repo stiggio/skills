@@ -1,0 +1,27 @@
+{
+  "name": "stigg-marketplace",
+  "description": "Stigg's official agent-skills marketplace — Claude Code plugins for Stigg's pricing, packaging, entitlements, and credits-based monetization platform.",
+  "owner": {
+    "name": "Stigg",
+    "url": "https://stigg.io"
+  },
+  "plugins": [
+    {
+      "name": "stigg",
+      "description": "Stigg skills for AI-assisted dev — pricing, plans, features, entitlements, subscriptions, credits, widgets, webhooks. Load the `stigg` umbrella first; it routes to the right pillar.",
+      "author": {
+        "name": "Stigg",
+        "url": "https://stigg.io"
+      },
+      "category": "productivity",
+      "source": {
+        "source": "github",
+        "repo": "stiggio/skills",
+        "path": ".",
+        "ref": "main"
+      },
+      "homepage": "https://docs.stigg.io",
+      "version": "0.1.0"
+    }
+  ]
+}

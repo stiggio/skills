@@ -4,6 +4,28 @@ Agent skills for [Stigg](https://stigg.io) — pricing, packaging, entitlements,
 
 ## Installation
 
+Pick the install path that matches your client.
+
+### Claude Code plugin
+
+The skills ship as a Claude Code plugin via Stigg's marketplace:
+
+```bash
+# Add the Stigg marketplace
+/plugin marketplace add stiggio/skills
+
+# Install the Stigg plugin (all 11 skills)
+/plugin install stigg@stigg-marketplace
+```
+
+Once installed, the agent auto-discovers every skill and the umbrella `stigg` skill routes to the right pillar.
+
+> **Migrating from a previous `npx skills add` install?** Remove the old skill folders first: `rm -rf ~/.claude/skills/stigg*`. Otherwise the legacy copies will compete with the plugin's.
+
+### Agent skills via npx
+
+For Claude Desktop, Claude.ai, or any client that consumes the [Agent Skills format](https://agentskills.io) directly:
+
 ```bash
 # Install a specific skill
 npx skills add stiggio/skills --skill stigg

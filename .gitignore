@@ -12,6 +12,9 @@
 # Logs
 *.log
 
+# skill-creator eval workspaces (local scratch)
+skills/*-workspace/
+
 # Node
 node_modules/
 
