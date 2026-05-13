@@ -21,7 +21,19 @@
         "ref": "main"
       },
       "homepage": "https://stigg.io",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "keywords": [
+        "stigg",
+        "pricing",
+        "billing",
+        "entitlements",
+        "subscriptions",
+        "credits",
+        "monetization",
+        "saas",
+        "paywall",
+        "usage-based-pricing"
+      ]
     }
   ]
 }

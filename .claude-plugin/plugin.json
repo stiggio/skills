@@ -11,5 +11,17 @@
     "type": "git",
     "url": "https://github.com/stiggio/skills"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "stigg",
+    "pricing",
+    "billing",
+    "entitlements",
+    "subscriptions",
+    "credits",
+    "monetization",
+    "saas",
+    "paywall",
+    "usage-based-pricing"
+  ]
 }
