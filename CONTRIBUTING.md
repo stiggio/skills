@@ -71,9 +71,10 @@ This scope keeps verification rounds tractable and avoids cross-language field-n
 ## Submitting a skill
 
 1. Fork the repo and create a branch.
-2. Add your skill directory under `skills/`.
+2. Add your skill directory under `skills/`. The Claude Code plugin (defined in `.claude-plugin/plugin.json`) auto-discovers every `skills/<name>/SKILL.md` — no plugin manifest edit needed when adding a skill.
 3. Update the **Available skills** table in `README.md`.
-4. Open a PR with:
+4. If the change is user-visible, bump the `version` in `.claude-plugin/plugin.json` and the matching entry in `.claude-plugin/marketplace.json` (semver — patch for fixes, minor for new skills, major for breaking renames).
+5. Open a PR with:
    - **What it does** — one sentence.
    - **Why it's useful** — what gap does it fill?
    - **How you tested it** — did an agent successfully use it end-to-end?
