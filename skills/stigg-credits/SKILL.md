@@ -1,6 +1,6 @@
 ---
 name: stigg-credits
-description: Use when operating credits in Stigg — modeling credit currencies, granting recurring / prepaid / promotional credits, defining consumption mappings or custom formulas, configuring auto-recharge, viewing the ledger, handling overdraft, hooking up billing for paid credits, or driving credit-based monetization. Triggers include "monetize with credits", "AI tokens", "credit grants", "credit pool", "credit balance low", "auto-recharge", "credit ledger", "consumption mapping", "custom credit formula", "seat-based credits", "OpenAI-style pricing". Skip for static catalog modeling — that's stigg-pricing-modeling — and for runtime gating of non-credit features (use stigg-entitlements).
+description: Use for any credits work in Stigg — defining a credit currency (also called "credit type"), the full lifecycle (create / update / archive / list / inspect associations), granting recurring / prepaid / promotional credits, configuring consumption mappings or custom formulas per plan, auto-recharge, ledger inspection, overdraft, billing integration for paid credits, or driving credit-based monetization end-to-end. Triggers include "monetize with credits", "AI tokens", "API credits", "compute units", "credit grants", "credit pool", "credit balance low", "auto-recharge", "credit ledger", "consumption mapping", "custom credit formula", "seat-based credits", "OpenAI-style pricing", "create credit currency", "credit type", "tokens consumed", "deduct credits", "prepaid credits". Skip for static catalog modeling of non-credit features (stigg-pricing-modeling), runtime gating of non-credit features (stigg-entitlements), or subscription lifecycle (stigg-subscriptions).
 ---
 
 # Stigg Credits — Credit-Based Monetization
@@ -48,7 +48,8 @@ Per the umbrella `stigg` skill: **search first.** The credits surface evolves qu
 
 A **credit currency** (called a "credit type" in the Stigg app's catalog UI) is your unit of consumption — `tokens`, `credits`, `compute units`. Customers' usage of metered features deducts from a pool denominated in that currency.
 
-- **Defined under Product Catalog → Credits** (singular / plural display names like "token" / "tokens"; immutable ID).
+- **The full currency lifecycle — define, update, archive, unarchive, list, and inspect associated plans/add-ons — is available via the Stigg MCP** (preferred for AI-assisted dev) **or the Stigg app under Product Catalog → Credits**. An end-to-end credits-consumption workflow (currency → metered feature → per-plan consumption mapping → grants → usage reporting) can run entirely through the MCP. Refresh the live MCP tool listing or the docs before authoring — operation names and field shapes are owned by the live surface, not this skill.
+- **Singular / plural display names** like "token" / "tokens", immutable ID. **Inspect dependencies before archiving** — Stigg blocks archive while the currency is referenced by active plans or add-ons.
 - **Non-interchangeable** across currencies — usage against one currency cannot consume another.
 - **Not a billing currency.** Custom credit currency is a consumption unit; for multi-currency *billing* (USD/EUR/JPY), see `stigg-pricing-modeling/references/price-localization.md`.
 - The catalog-side modeling shape (recurring grants attached to plans / add-ons as entitlements) is in `stigg-pricing-modeling/references/credits-modeling.md`.

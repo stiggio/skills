@@ -77,7 +77,7 @@ Decision flowchart with edge cases: see `stigg/references/decision-tree.md`. SDK
 - **Content-Type:** `application/json` for bodies.
 - **Idempotency:** add `Idempotency-Key: <unique-id>` to POSTs (cached 24h). Repeated calls with the same key return the cached response.
 - **Pagination:** cursor-based. Query params: `limit` (default 20, max 100), `starting_after`, `ending_before`. Response includes `data[]`, `has_more`, `next_cursor`.
-- **Filtering:** resource-specific query params (e.g., `?email=`, `?status=active`).
+- **Filtering:** resource-specific query params. Enum-valued filters take the underlying enum symbol (**uppercase**), and most list endpoints accept comma-separated values for multi-value filtering. Examples: `?email=user@example.com`, `?status=ACTIVE,IN_TRIAL`, `?pricingType=PAID`. Date fields accept range operators (`?createdAt[gte]=2026-01-01T00:00:00Z`).
 - **Errors:** standard HTTP codes with a structured body.
 
 ```bash

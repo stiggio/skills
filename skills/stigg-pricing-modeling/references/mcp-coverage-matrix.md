@@ -30,7 +30,7 @@ This file is a checklist for the agent: when in doubt about whether an op is MCP
 | **Add-ons** | Define compatibility | MCP | |
 | **Products** | Create / edit / archive product | MCP | |
 | **Coupons** | Create / edit / apply / archive coupon | MCP | |
-| **Credits — currencies** | Define a credit currency | MCP | Re-verify whether per-product or per-account. |
+| **Credits — currencies** | Full lifecycle: define / update / archive / unarchive / list / list associated entities | MCP | Currencies live at the account level. `list associated entities` returns active plans + add-ons referencing the currency — call before archiving so the archive doesn't fail on dependencies. |
 | **Credits — consumption mapping** | Configure a metered feature's credit consumption **on a plan** (per-plan, not per-feature) | MCP | |
 | **Credits — formulas** | Custom credit consumption formulas — also **per-plan** | MCP | Re-verify formula syntax. |
 | **Price localization** | Set localized prices per currency | MCP | No-code UI is also available. |

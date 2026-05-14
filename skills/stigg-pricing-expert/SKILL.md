@@ -1,6 +1,6 @@
 ---
 name: stigg-pricing-expert
-description: Use when the user needs help PICKING a monetization model — not implementing one. Triggers include "what pricing should I use", "how should I monetize this", "which pricing model fits", "should I do per-seat or usage-based", "should I use credits", "design my pricing", "I'm pricing an AI product", "freemium vs trial", "hybrid pricing advice", "value metric". Skip for catalog *implementation* (use stigg-pricing-modeling) and runtime gating (use stigg-entitlements).
+description: ADVISORY skill — use when the user is **picking** a monetization model, not implementing one. Triggers include "what pricing should I use", "how should I charge", "how should I monetize this", "what's the right pricing model", "should I do per-seat or usage-based", "should I use credits", "freemium vs trial", "design my pricing", "pricing strategy", "monetization model", "I'm pricing an AI product", "value metric", "how to price [feature/seat/usage]", "hybrid pricing advice", "willingness to pay". Surfaces value-metric questions, maps answers to Stigg's supported models (flat / per-unit / usage-based / credits / hybrid / freemium / trial / custom), then hands off to stigg-pricing-modeling for catalog work. Skip when the model is already chosen and the user just wants it built — that's stigg-pricing-modeling. Skip for runtime gating (stigg-entitlements) or subscription lifecycle (stigg-subscriptions).
 ---
 
 # Stigg Pricing Expert — Pick the Right Monetization Model
