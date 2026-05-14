@@ -20,7 +20,7 @@ Why: the Stigg MCP exposes the full Stigg API surface for catalog modeling. The 
 Where MCP coverage is incomplete today, fall through in this order:
 
 1. **Stigg MCP** (`mcp.stigg.io`) — preferred. See `stigg-mcp`.
-2. **Stigg CLI** — for deterministic scripts / CI.
+2. **Stigg CLI** (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli) — for deterministic scripts / CI.
 3. **REST API** — for ops the SDK doesn't surface yet.
 4. **Stigg UI** (`app.stigg.io`) — last resort, only for ops not yet covered above. **Name the operation explicitly** in the skill's MCP-coverage matrix and link to the UI page.
 

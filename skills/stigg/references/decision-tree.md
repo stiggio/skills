@@ -23,7 +23,7 @@ Is the goal …
 │     → GraphQL API at https://api.stigg.io/graphql   (skill: stigg-api)
 │
 ├── Scripts, CI/CD, terminal admin?
-│     → Stigg CLI
+│     → Stigg CLI   (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli)
 │
 └── Drop-in UI (paywall, customer portal, checkout)?
       → Stigg Widgets   (Storybook: https://widgets.stigg.io/)
@@ -65,6 +65,9 @@ Is the goal …
 
 ### Stigg CLI
 
+- **What it is:** the official Stigg CLI — a Go binary, auto-generated (Stainless) from Stigg's REST API. Source: https://github.com/stiggio/stigg-cli. There is **no `@stigg/cli` npm package**; do not invent one.
+- **Install:** `brew install stiggio/tools/stigg` (preferred) or `go install github.com/stiggio/stigg-cli/cmd/stigg@latest` (Go 1.22+).
+- **Auth:** `--api-key <key>` flag or `STIGG_API_KEY` env var.
 - **Best for:** scripts, CI/CD, terminal admin, copying changes between environments, one-off catalog edits.
 - **Deterministic** — you write the exact command. The MCP server is non-deterministic; the agent decides which calls to make.
 - **Complementary to the MCP**, not a replacement. Use the CLI when you need to know exactly what API call will run.
