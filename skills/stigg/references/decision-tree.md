@@ -2,11 +2,13 @@
 
 Stigg exposes several surfaces. Picking the wrong one is a common time sink.
 
+> **Default rule:** when in doubt for integration work, pick the **Stigg MCP server**. Only route to the **Stigg CLI** when the user explicitly asks for the CLI or for a deterministic script.
+
 ## Quick decision
 
 ```text
 Is the goal …
-├── Setting up Stigg, exploring, modeling pricing, one-off ops?
+├── Setting up Stigg, exploring, modeling pricing, one-off ops?   ← default
 │     → Stigg MCP server   (skill: stigg-mcp)
 │
 ├── A production hot path (gating, usage, customer-facing)?
@@ -22,7 +24,7 @@ Is the goal …
 ├── Legacy code, or a query the REST API doesn't expose yet?
 │     → GraphQL API at https://api.stigg.io/graphql   (skill: stigg-api)
 │
-├── Scripts, CI/CD, terminal admin?
+├── User EXPLICITLY asked for the CLI, or for a deterministic script / CI step?
 │     → Stigg CLI   (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli)
 │
 └── Drop-in UI (paywall, customer portal, checkout)?
@@ -66,7 +68,8 @@ Is the goal …
 ### Stigg CLI
 
 - **Source, install, auth:** see `stigg-mcp/references/cli-vs-mcp.md` — the canonical CLI onboarding reference.
-- **Best for:** scripts, CI/CD, terminal admin, copying changes between environments, one-off catalog edits.
+- **Default posture:** **opt-in only.** For integration work, default to the Stigg MCP server. Reach for the CLI when the user explicitly asks for it, or when the task is unambiguously a deterministic shell workflow (CI step, scheduled cron, runbook, "give me the exact command").
+- **Best for:** scripts, CI/CD, terminal admin, copying changes between environments, one-off catalog edits driven from a shell.
 - **Deterministic** — you write the exact command. The MCP server is non-deterministic; the agent decides which calls to make.
 - **Complementary to the MCP**, not a replacement. Use the CLI when you need to know exactly what API call will run.
 
@@ -79,7 +82,7 @@ Is the goal …
 
 | Confusion | Resolution |
 |---|---|
-| "CLI vs MCP — which one do I install?" | Both. They serve different jobs. CLI for scripts; MCP for AI. |
+| "CLI vs MCP — which one do I install?" | **MCP by default.** Add the CLI only when you explicitly want a deterministic shell workflow (CI, runbooks). They're complementary. |
 | "Should I use REST or GraphQL?" | REST for new work. GraphQL only when REST doesn't expose what you need. |
 | "Which key goes in the React SDK?" | The **publishable** (client) key. Server key in the browser is a security incident. |
 | "MCP doesn't support this op." | Re-check via Mintlify MCP — coverage expands. The umbrella skill's search-first rule applies here too. |
