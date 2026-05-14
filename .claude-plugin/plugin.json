@@ -7,10 +7,7 @@
     "url": "https://stigg.io"
   },
   "homepage": "https://stigg.io",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/stiggio/skills"
-  },
+  "repository": "https://github.com/stiggio/skills",
   "license": "MIT",
   "keywords": [
     "stigg",
