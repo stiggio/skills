@@ -66,7 +66,7 @@ Revocation is immediate and irreversible. Switch all services to the new key fir
 | **REST API** (`https://api.stigg.io/api/v1`) | No SDK in your language; thin server-side proxies; explicit control. |
 | **GraphQL API** (`https://api.stigg.io/graphql`) | Existing GraphQL integration, or a query the REST API doesn't expose yet. |
 | **Stigg MCP server** (`https://mcp.stigg.io`) | AI-assisted dev. See `stigg-mcp`. |
-| **Stigg CLI** (Go binary — `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) | Scripts, CI/CD. |
+| **Stigg CLI** (Go binary — `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) | Scripts, CI/CD. Opt-in only — see `stigg-mcp/references/cli-vs-mcp.md` for default vs opt-in posture. |
 
 Decision flowchart with edge cases: see `stigg/references/decision-tree.md`. SDK selection (Node + React canonical, raw HTTP for non-Node runtimes): `references/sdk-selection.md`.
 

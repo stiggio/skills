@@ -2,6 +2,8 @@
 
 Both give programmatic access to Stigg. They are **complementary**, not alternatives — most teams end up using both.
 
+> **Default to the MCP for integration work.** Only reach for the CLI when the user explicitly asks for the CLI, or the task is unambiguously a deterministic shell workflow (CI, runbooks, "give me the exact command"). Do not propose the CLI as a fallback for the MCP.
+
 ## What is the Stigg CLI?
 
 - **Source:** https://github.com/stiggio/stigg-cli — a Go binary, auto-generated (Stainless) from Stigg's REST API.
@@ -20,8 +22,8 @@ Both give programmatic access to Stigg. They are **complementary**, not alternat
 
 ## When to pick which
 
-- **CLI** — anytime you need to know exactly what API call will run. CI pipelines, scheduled catalog migrations, reproducible local scripts, "copy plans from staging to prod" runbooks.
-- **MCP** — anytime you're already inside an AI assistant and want to describe the goal in plain English. Modeling pricing, exploring an environment, one-off ops.
+- **MCP (default)** — anytime you're inside an AI assistant. Modeling pricing, exploring an environment, one-off ops, debugging. If the user didn't explicitly ask for the CLI, this is your pick.
+- **CLI (opt-in)** — only when the user explicitly says "use the CLI" / "give me the exact command", or the task is unambiguously a deterministic shell workflow: CI pipelines, scheduled catalog migrations, reproducible local scripts, "copy plans from staging to prod" runbooks.
 
 ## Don't confuse them
 

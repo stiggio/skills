@@ -38,20 +38,18 @@ Full rationale and examples: `references/search-first.md`.
 
 ## Pick the Right Surface
 
-Stigg exposes several integration surfaces. Pick deliberately.
+Stigg exposes several integration surfaces. Pick deliberately. **Default to the MCP** unless the user explicitly asks for the CLI — full posture in `stigg-mcp/references/cli-vs-mcp.md`.
 
 | Goal | Use |
 |---|---|
-| Modeling pricing during development, exploration, one-off ops | **Stigg MCP server** (`stigg-mcp`) |
+| Modeling pricing during development, exploration, one-off ops *(default)* | **Stigg MCP server** (`stigg-mcp`) |
 | Production hot path: gating, usage reporting, customer-facing pages | **Backend or frontend SDK** (`stigg-api` → SDK matrix) |
 | Direct REST calls (no SDK in your language, or thin server-side proxy) | **REST API** at `https://api.stigg.io/api/v1` (`stigg-api`) |
 | GraphQL (legacy or specific advanced queries) | **GraphQL API** at `https://api.stigg.io/graphql` (`stigg-api`) |
-| Scripts, CI/CD, terminal admin | **Stigg CLI** (Go binary, `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) |
+| Scripts, CI/CD, terminal admin — **only when the user explicitly asks for the CLI** | **Stigg CLI** (Go binary, `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) |
 | Drop-in UI (paywall, customer portal, checkout) | **Widgets** — see `widgets.stigg.io` Storybook |
 
-Decision flowchart with edge cases: `references/decision-tree.md`.
-
-> **CLI vs MCP server:** both are programmatic. The CLI is deterministic — exact commands, scriptable. The MCP server is non-deterministic — natural-language driven by an agent. Use the CLI for scripts/CI; use the MCP for AI-assisted dev. They are complementary, not alternatives.
+Decision flowchart with edge cases: `references/decision-tree.md`. CLI vs MCP details: `stigg-mcp/references/cli-vs-mcp.md`.
 
 ## Routing — Which Sub-Skill You Need
 
