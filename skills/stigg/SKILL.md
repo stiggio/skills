@@ -38,9 +38,7 @@ Full rationale and examples: `references/search-first.md`.
 
 ## Pick the Right Surface
 
-Stigg exposes several integration surfaces. Pick deliberately.
-
-> **Default to the Stigg MCP server** for any integration work unless the user explicitly asks for the CLI or for a deterministic script. The CLI is opt-in, not the fallback.
+Stigg exposes several integration surfaces. Pick deliberately. **Default to the MCP** unless the user explicitly asks for the CLI — full posture in `stigg-mcp/references/cli-vs-mcp.md`.
 
 | Goal | Use |
 |---|---|
@@ -51,9 +49,7 @@ Stigg exposes several integration surfaces. Pick deliberately.
 | Scripts, CI/CD, terminal admin — **only when the user explicitly asks for the CLI** | **Stigg CLI** (Go binary, `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) |
 | Drop-in UI (paywall, customer portal, checkout) | **Widgets** — see `widgets.stigg.io` Storybook |
 
-Decision flowchart with edge cases: `references/decision-tree.md`.
-
-> **CLI vs MCP server:** both are programmatic, but **MCP is the default**. The MCP is non-deterministic — natural-language driven by an agent — and fits AI-assisted dev. The CLI is deterministic — exact commands, scriptable — and is the right pick only when the user explicitly wants a CLI workflow (CI scripts, runbooks, "give me the exact command"). They are complementary, not alternatives.
+Decision flowchart with edge cases: `references/decision-tree.md`. CLI vs MCP details: `stigg-mcp/references/cli-vs-mcp.md`.
 
 ## Routing — Which Sub-Skill You Need
 
