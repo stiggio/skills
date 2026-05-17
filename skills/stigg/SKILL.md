@@ -55,6 +55,8 @@ Decision flowchart with edge cases: `references/decision-tree.md`.
 
 ## Routing — Which Sub-Skill You Need
 
+**Sub-skill invocation is automatic.** When the user's request matches a sub-skill's triggers (per the table below and each sub-skill's frontmatter description), invoke that sub-skill via the Skill tool immediately. Load it *alongside* this umbrella — they work together. Do not ask the user to run `/stigg-<name>`. Do not "route by mention." The user types their goal in plain English; this skill picks the right pillar and loads it.
+
 | Task | Skill |
 |---|---|
 | First-time MCP setup, connecting Claude Code/Cursor/etc. to Stigg | `stigg-mcp` |
@@ -68,7 +70,7 @@ Decision flowchart with edge cases: `references/decision-tree.md`.
 | Choosing the right pricing / monetization model | `stigg-pricing-expert` |
 | Multi-step recipes (freemium, hybrid, AI-credits, trials) | `stigg-recipes` |
 
-If a sub-skill is not yet loaded, route the user to it by name — do not improvise content from outside this repo.
+If a sub-skill exists for the task, invoke it via the Skill tool — do not improvise content from outside this repo, and do not stall waiting for the user to type its slash command.
 
 ## Stigg in 60 Seconds
 
