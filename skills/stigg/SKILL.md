@@ -46,7 +46,7 @@ Stigg exposes several integration surfaces. Pick deliberately.
 | Production hot path: gating, usage reporting, customer-facing pages | **Backend or frontend SDK** (`stigg-api` → SDK matrix) |
 | Direct REST calls (no SDK in your language, or thin server-side proxy) | **REST API** at `https://api.stigg.io/api/v1` (`stigg-api`) |
 | GraphQL (legacy or specific advanced queries) | **GraphQL API** at `https://api.stigg.io/graphql` (`stigg-api`) |
-| Scripts, CI/CD, terminal admin | **Stigg CLI** |
+| Scripts, CI/CD, terminal admin | **Stigg CLI** (Go binary, `brew install stiggio/tools/stigg`; repo: https://github.com/stiggio/stigg-cli) |
 | Drop-in UI (paywall, customer portal, checkout) | **Widgets** — see `widgets.stigg.io` Storybook |
 
 Decision flowchart with edge cases: `references/decision-tree.md`.

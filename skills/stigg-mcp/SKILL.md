@@ -113,7 +113,7 @@ If any step fails, the most common causes are: wrong header name (`X-API-KEY`, n
 Don't load this skill — go straight to a different one — when:
 
 - You're writing **production hot paths** (gating, per-request usage reports). The MCP is non-deterministic by design; use the Node SDK instead — see `stigg-api`.
-- You need **deterministic, scriptable, reproducible** ops (CI, scheduled cron, runbooks). Use the **Stigg CLI** — see `references/cli-vs-mcp.md`.
+- You need **deterministic, scriptable, reproducible** ops (CI, scheduled cron, runbooks). Use the **Stigg CLI** (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli) — see `references/cli-vs-mcp.md`.
 - The user's question is about the **REST or GraphQL API itself**, not the MCP server — see `stigg-api`.
 
 The MCP server fits when you're inside an AI assistant doing modeling, exploration, or one-off ops. It doesn't fit unattended automation or production hot paths.

@@ -35,7 +35,7 @@ A terse, by-area listing of what the Stigg MCP can do. **This is a snapshot.** T
 
 ## What's missing today
 
-MCP coverage is broad but not 100% of the Stigg API. When an operation isn't MCP-exposed, fall through to the SDK / REST API (skill: `stigg-api`) or the Stigg CLI for scripted ops.
+MCP coverage is broad but not 100% of the Stigg API. When an operation isn't MCP-exposed, fall through to the SDK / REST API (skill: `stigg-api`) or the Stigg CLI (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli) for scripted ops.
 
 A **canonical MCP-coverage matrix** lives in `stigg-pricing-modeling/references/mcp-coverage-matrix.md` — that file is updated as the MCP grows.
 

@@ -23,7 +23,7 @@ Is the goal …
 │     → GraphQL API at https://api.stigg.io/graphql   (skill: stigg-api)
 │
 ├── Scripts, CI/CD, terminal admin?
-│     → Stigg CLI
+│     → Stigg CLI   (`brew install stiggio/tools/stigg` — https://github.com/stiggio/stigg-cli)
 │
 └── Drop-in UI (paywall, customer portal, checkout)?
       → Stigg Widgets   (Storybook: https://widgets.stigg.io/)
@@ -65,6 +65,7 @@ Is the goal …
 
 ### Stigg CLI
 
+- **Source, install, auth:** see `stigg-mcp/references/cli-vs-mcp.md` — the canonical CLI onboarding reference.
 - **Best for:** scripts, CI/CD, terminal admin, copying changes between environments, one-off catalog edits.
 - **Deterministic** — you write the exact command. The MCP server is non-deterministic; the agent decides which calls to make.
 - **Complementary to the MCP**, not a replacement. Use the CLI when you need to know exactly what API call will run.

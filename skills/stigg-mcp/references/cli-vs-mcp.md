@@ -2,6 +2,12 @@
 
 Both give programmatic access to Stigg. They are **complementary**, not alternatives — most teams end up using both.
 
+## What is the Stigg CLI?
+
+- **Source:** https://github.com/stiggio/stigg-cli — a Go binary, auto-generated (Stainless) from Stigg's REST API.
+- **Install:** `brew install stiggio/tools/stigg` (preferred). On a Go 1.22+ machine: `go install github.com/stiggio/stigg-cli/cmd/stigg@latest` (binary lands in `$HOME/go/bin`; add it to PATH).
+- **Auth:** `--api-key <key>` flag or `STIGG_API_KEY` env var. Environment-bound, same key types as the rest of Stigg.
+
 ## Side by side
 
 |  | **Stigg CLI** | **Stigg MCP server** |
