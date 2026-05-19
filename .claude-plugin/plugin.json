@@ -1,7 +1,7 @@
 {
   "name": "stigg",
   "description": "Stigg skills for AI-assisted dev — pricing, plans, features, entitlements, subscriptions, credits, widgets, webhooks. Hub-and-spoke layout: load the `stigg` umbrella first; it routes to the right pillar (mcp, api, pricing-modeling, entitlements, subscriptions, credits, widgets, webhooks, pricing-expert, recipes).",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Stigg",
     "url": "https://stigg.io"
