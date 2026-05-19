@@ -5,4 +5,4 @@
 
 ### Features
 
-* minor bump; fix: patch; feat!:/BREAKING CHANGE: major. ([5aae874](https://github.com/stiggio/skills/commit/5aae874431fd1bdd8a1cd2f8066c98770ed0f559))
+* semver support
