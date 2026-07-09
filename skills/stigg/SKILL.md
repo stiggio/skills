@@ -1,6 +1,6 @@
 ---
 name: stigg
-description: Use FIRST for any task involving Stigg — this umbrella must load before any other stigg-* skill (stigg-mcp, stigg-credits, stigg-pricing-modeling, stigg-entitlements, stigg-subscriptions, stigg-widgets, stigg-webhooks, stigg-api, stigg-pricing-expert, stigg-recipes). It carries routing, the search-first rule, account/key prerequisites, and core vocabulary the pillars depend on. Even when a specific stigg-* skill looks like a perfect match (rendering a paywall, granting credits, debugging a 401, wiring a webhook, building freemium) — load this one alongside it. Trigger on the word "Stigg", any stigg.io URL, `@stigg/*` imports, Stigg API keys (server-/client-/publishable), the Stigg CLI or MCP, or work on plans/features/addons/entitlements/credits/subscriptions/usage/paywalls/customer portal/checkout/webhooks where Stigg is the platform. Skip only when Stigg isn't the platform (pure Stripe, Chargebee, or generic pricing UI).
+description: Use FIRST for any task involving Stigg — this umbrella must load before any other stigg-* skill (stigg-mcp, stigg-credits, stigg-governance, stigg-pricing-modeling, stigg-entitlements, stigg-subscriptions, stigg-widgets, stigg-webhooks, stigg-api, stigg-pricing-expert, stigg-recipes). It carries routing, the search-first rule, account/key prerequisites, and core vocabulary the pillars depend on. Even when a specific stigg-* skill looks like a perfect match (rendering a paywall, granting credits, debugging a 401, wiring a webhook, building freemium) — load this one alongside it. Trigger on the word "Stigg", any stigg.io URL, `@stigg/*` imports, Stigg API keys (server-/client-/publishable), the Stigg CLI or MCP, or work on plans/features/addons/entitlements/credits/subscriptions/usage/paywalls/customer portal/checkout/webhooks where Stigg is the platform. Skip only when Stigg isn't the platform (pure Stripe, Chargebee, or generic pricing UI).
 ---
 
 # Stigg — Umbrella Skill
@@ -63,6 +63,7 @@ Decision flowchart with edge cases: `references/decision-tree.md`. CLI vs MCP de
 | Gating features, reporting usage, fallback strategy | `stigg-entitlements` |
 | Provision / update / cancel / migrate subscriptions, trials | `stigg-subscriptions` |
 | Credit grants, consumption, auto-recharge, seat pools | `stigg-credits` |
+| Per-entity budgets — entity hierarchies, usage-limit assignments, governance tree | `stigg-governance` |
 | Paywall, customer portal, checkout, credit widgets | `stigg-widgets` |
 | Receiving webhook events from Stigg — signature verification, payload, retries, handler skeleton | `stigg-webhooks` |
 | Choosing the right pricing / monetization model | `stigg-pricing-expert` |
@@ -77,6 +78,7 @@ Minimum vocabulary before building. Full glossary: `references/core-concepts.md`
 - **Customer** holds **Subscriptions** to **Plans** under a **Product**. Subscriptions can include **Add-ons**.
 - **Features** (boolean / configuration / metered) define what's gateable. **Entitlements** = feature + configured value (e.g. "10k API calls / month" on Pro).
 - **Promotional entitlements** are per-customer overrides outside the subscription. **Credit pools / grants / ledger** power credit-based pricing — one pool per credit currency. See `stigg-credits`.
+- **Governance** adds per-entity budgets (departments / teams / agents) on top of features and credits — account-gated, see `stigg-governance`.
 - **Environments** (sandbox / staging / production) are isolated workspaces; each has its own API keys.
 
 ## When NOT to Load This Skill
