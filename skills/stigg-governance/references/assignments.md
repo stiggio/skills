@@ -6,7 +6,8 @@ An assignment is the budget itself: a usage limit for one entity on one capabili
 
 | Field | Meaning |
 |---|---|
-| entity | The entity being budgeted (any level of the tree — org, department, team, agent). |
+| `entityId` | The entity being budgeted (any level of the tree — org, department, team, agent). |
+| `parentId` | The parent entity id — **this is where hierarchy lives.** `parentId` is set on the assignment, not on the entity record; a root node's assignment has `parentId: null`. |
 | `capability` | What's limited: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). Exactly one. |
 | `usageLimit` | The budget for one cadence window. |
 | `cadence` | ISO-8601 duration for the reset window — `'P1M'` (monthly), `'P1D'` (daily), `'P1W'` (weekly), `'P1Y'` (yearly). |
@@ -36,10 +37,11 @@ By default an assignment covers **all** usage attributed to the entity (includin
 
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
+// parentId on the assignment is what builds the hierarchy (root = parentId: null).
 await client.v1Beta.customers.assignments.upsert('customer-123', {
   assignments: [
-    { entityId: 'dept-legal', currencyId: 'ai_tokens', usageLimit: 50000, cadence: 'P1M' },
-    { entityId: 'team-ip',    featureId: 'api_calls',  usageLimit: 10000, cadence: 'P1M' },
+    { entityId: 'dept-legal', parentId: null,        currencyId: 'ai_tokens', usageLimit: 50000, cadence: 'P1M' },
+    { entityId: 'team-ip',    parentId: 'dept-legal', featureId: 'api_calls',  usageLimit: 10000, cadence: 'P1M' },
   ],
 });
 ```

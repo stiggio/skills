@@ -28,9 +28,10 @@ Entities are the instances: *this* customer's departments, teams, and agents.
 | Aspect | Rule |
 |---|---|
 | Scope | Per customer. |
-| Hierarchy | `parentId` links entities into a tree — **up to 4 levels** (e.g. org → department → team → agent). |
+| Record shape | Flat: `id`, `entityTypeId`, `metadata`. **No `parentId` on the entity** — the entity upsert rejects it (`Unrecognized key "parentId"`). |
+| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels** (e.g. org → department → team → agent). |
 | Operations | **List / get / upsert (bulk `PUT`) / archive / unarchive**. |
-| Archive | **Leaves only.** An entity with children cannot be archived — re-parent or archive the children first. Unarchive restores it. |
+| Archive | **Leaves only.** An entity with children cannot be archived — re-parent (via the assignment) or archive the children first. Unarchive restores it. |
 | SDK | `client.v1Beta.customers.entities.*` |
 
 ### Hierarchy guidance
@@ -39,17 +40,21 @@ Entities are the instances: *this* customer's departments, teams, and agents.
 - The 4-level cap is a hard limit. If your org model is deeper, flatten the levels that don't carry budgets.
 - Bulk `PUT` upsert makes the entity tree declarative: your provisioning code can push the desired tree on every sync and let Stigg reconcile.
 
-### Example — upsert a small tree (via MCP `execute`, which runs SDK code)
+### Example — upsert entities, then wire the hierarchy on the assignments
+
+Entities are declared **flat** — `parentId` does **not** belong here. The tree is expressed when you upsert assignments (see `assignments.md`), where each assignment carries the `parentId` linking a node to its parent.
 
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
+// 1) Entities: flat records, no parentId.
 await client.v1Beta.customers.entities.upsert('customer-123', {
   entities: [
-    { id: 'dept-legal',  entityTypeId: 'department' },
-    { id: 'team-ip',     entityTypeId: 'team', parentId: 'dept-legal' },
-    { id: 'agent-7',     entityTypeId: 'agent', parentId: 'team-ip' },
+    { id: 'dept-legal', entityTypeId: 'department' },
+    { id: 'team-ip',    entityTypeId: 'team' },
+    { id: 'agent-7',    entityTypeId: 'agent' },
   ],
 });
+// 2) parentId is set on the assignment (see assignments.md).
 ```
 
 ## Common mistakes
