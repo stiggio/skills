@@ -2,16 +2,22 @@
 
 The runtime half of governance: how usage lands on entities, how access is gated, and how balances are read. **Confirm response shapes via the Stigg MCP's `search_docs` before building against them.**
 
-## Usage attribution — report usage, not raw events
+## Usage attribution — the meter-type fork
 
-The governance ingest path is **`POST /api/v1/usage`** (SDK `client.v1.usage.report`): a **synchronous, meter-free** report that increments the counter and rolls up the tree immediately. The response echoes the new `currentUsage`. Attribution happens through **dimensions**:
+Ingest never gates; it records consumption and rolls it up the tree. **Which endpoint to call depends on the target feature's meter type.** In both paths, attribution happens through **dimensions**:
 
 1. The entity type declares up to 2 `attributionKeys` (e.g. `departmentId`, `agentId`).
-2. Your usage report carries those keys' values in `dimensions`.
+2. Your ingest call carries those keys' values in `dimensions`.
 3. Stigg matches dimension values to entity IDs and attributes the usage to the entity **and all of its ancestors**.
 
+A call with no attribution-key dimensions attributes to no entity — customer-level metering still works, but governance budgets never see it.
+
+### Calculated / incremental meters → `usage.report`
+
+Features whose usage your app computes and reports directly use **`POST /api/v1/usage`** (SDK `client.v1.usage.report`): a **synchronous** report that increments the counter and rolls up the tree immediately. The response echoes the new `currentUsage`. `featureId` accepts either a metered feature id **or** a credit currency id.
+
 ```jsonc
-// POST /api/v1/usage — primary path; required fields: customerId, featureId, value
+// POST /api/v1/usage — calculated/incremental meters; required: customerId, featureId, value
 {
   "usages": [{
     "customerId": "customer-123",
@@ -23,11 +29,28 @@ The governance ingest path is **`POST /api/v1/usage`** (SDK `client.v1.usage.rep
 // → 201; data[].currentUsage reflects the rolled-up total (ancestors included)
 ```
 
-A usage report with no attribution-key dimensions attributes to no entity — customer-level metering still works, but governance budgets never see it. `featureId` accepts either a metered feature id **or** a credit currency id.
+### Raw-events meters → `events.report` (reportEvent)
 
-### Raw events — secondary, and only with a meter
+Features backed by an **event meter** (Stigg aggregates raw events — count/sum/unique — into usage) **cannot** be fed via `usage.report`; they **require** **`POST /api/v1/events`** (SDK `client.v1.events.report`). This is the current reality — usage-reporting events for these features is not supported. It's **high-volume, eventually-consistent** (~seconds of lag).
 
-`POST /api/v1/events` (`client.v1.events.report`, requires `eventName` + `idempotencyKey`) is the **high-volume, eventually-consistent** path (~seconds of lag). It's meaningful for governance **only when the target feature has a correctly configured event meter** — that meter is what turns raw events into feature usage. **With no meter, events are accepted (`201`) but silently never accrue** to any governance budget, and no error tells you. Prefer `POST /api/v1/usage` unless you specifically need high-throughput metering *and* have set up the meter. Configuring event meters is a catalog concern — see `stigg-pricing-modeling` / `stigg-entitlements`.
+The event does **not** carry a `featureId`. The meter is matched by **`eventName`** (must equal the meter's configured event); `idempotencyKey` dedupes; **entity attribution rides in `dimensions`**.
+
+```jsonc
+// POST /api/v1/events — raw-events meters; no featureId — the meter is matched by eventName
+{
+  "events": [{
+    "customerId": "customer-123",
+    "eventName": "ai-tokens-consumed",
+    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "dimensions": { "departmentId": "dept-legal", "agentId": "agent-7" }
+  }]
+}
+// → 202 accepted; accrues asynchronously
+```
+
+### Picking the path — try, then fall back
+
+Meter type is **not reliably readable via the API** — the feature's `meterType` enum (`NONE`/`INCREMENTAL`/`FLUCTUATING`) has no "raw events" value; event meters live in a separate `meter`/`aggregation` config. So don't try to detect it up front: **call `usage.report`; if it returns `CannotReportUsageForEntitlementWithMeterError`, the feature is a raw-events meter — switch to `events.report`.** Configuring event meters is a catalog concern — see `stigg-pricing-modeling` / `stigg-entitlements`.
 
 ## Access — the entitlements check
 
@@ -89,7 +112,8 @@ The tree's usage figures come from a **read model that may lag by minutes**. Con
 per request:
   1. entitlements check (isGranted, entity-attributed)  → allow / deny
   2. do the work
-  3. report usage with attribution-key dimensions        → POST /api/v1/usage, synchronous roll-up
+  3. ingest with attribution-key dimensions              → usage.report (calc/incremental)
+                                                            or events.report (raw-events, by eventName)
 
 out of band:
   governance tree query (with featureIds/currencyIds) → dashboards, alerts, budget reviews
@@ -101,7 +125,8 @@ out of band:
 |---|---|
 | Polling the tree per-request to "pre-check" budget | Use the entitlements check; the tree lags and isn't an enforcement surface. |
 | Tree query returns `null` limits/usage | You're in tree-only mode. Pass `featureIds`/`currencyIds` to hydrate config + usage. |
-| Feeding governance via `POST /api/v1/events` without a meter | Events need a configured event meter or they never accrue. Report via `POST /api/v1/usage`. |
+| Always using one ingest endpoint for every feature | Fork by meter type: calc/incremental → `usage.report`; raw-events → `events.report`. On `CannotReportUsageForEntitlementWithMeterError` from `usage.report`, switch to reportEvent. |
+| Passing `featureId` to reportEvent | reportEvent matches the meter by `eventName` (+`idempotencyKey`), not `featureId`; attribution is in `dimensions`. |
 | Treating tree lag as an ingestion bug | Minutes of lag is the contract. Verify events in the Stigg app's Usage events view instead. |
 | Expecting a child to keep access after a parent exhausts | Any exhausted ancestor blocks the subtree. |
 | Summing children's limits to infer the parent's capacity | Limits are independent gates, not an allocation ledger. |

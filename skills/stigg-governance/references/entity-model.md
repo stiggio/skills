@@ -28,10 +28,10 @@ Entities are the instances: *this* customer's departments, teams, and agents.
 | Aspect | Rule |
 |---|---|
 | Scope | Per customer. |
-| Record shape | Flat: `id`, `entityTypeId`, `metadata`. **No `parentId` on the entity** — the entity upsert rejects it (`Unrecognized key "parentId"`). |
-| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels** (e.g. org → department → team → agent). |
-| Operations | **List / get / upsert (bulk `PUT`) / archive / unarchive**. |
-| Archive | **Leaves only.** An entity with children cannot be archived — re-parent (via the assignment) or archive the children first. Unarchive restores it. |
+| Record shape | Flat: `id`, `entityTypeId`, `metadata` (free-form key/value; patch semantics — `""` deletes a key, omitted keys preserved). **No `parentId` on the entity** — the entity upsert rejects it (`Unrecognized key "parentId"`). `metadata` has **no structural role**: don't model a parent through it. |
+| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels** (e.g. org → department → team → agent). **Re-parenting is leaf-only** (see `assignments.md`). |
+| Operations | **List / get / upsert (bulk `PUT`) / archive / unarchive**. Default list excludes archived. |
+| Archive | **Not leaf-gated.** Archiving a parent succeeds even with children — the children stay active but orphaned (their assignments still point at the archived parent). To retire a subtree cleanly, archive/re-home **descendants first** yourself. Unarchive restores an entity. The "archive the leaves first" rule people expect is really the **re-parent** constraint, not archive. |
 | SDK | `client.v1Beta.customers.entities.*` |
 
 ### Hierarchy guidance
@@ -63,5 +63,7 @@ await client.v1Beta.customers.entities.upsert('customer-123', {
 |---|---|
 | Creating entity types per customer | Types are environment-level; entities are per customer. |
 | Modeling every org level as an entity level | Only levels that carry budgets or need roll-up belong in the tree — 4 levels max. |
-| Archiving a parent to "clean up" a subtree | Archive walks bottom-up, leaves only. |
+| Assuming archive is leaves-only | It isn't — archiving a parent orphans its active children. Archive/re-home descendants bottom-up yourself; the platform won't block you. (Leaf-only is the *re-parent* rule.) |
+| Re-parenting a node with children | Leaf-only — rejected (opaque 500). Move/archive its children first. |
+| Modeling a parent via entity `metadata` | `metadata` is free-form and structural-role-free; hierarchy is `parentId` on the assignment. |
 | Renaming attribution keys after events flow | Old events keep the old dimensions and won't re-attribute. Treat keys as append-only contracts. |

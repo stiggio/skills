@@ -7,7 +7,7 @@ An assignment is the budget itself: a usage limit for one entity on one capabili
 | Field | Meaning |
 |---|---|
 | `entityId` | The entity being budgeted (any level of the tree — org, department, team, agent). |
-| `parentId` | The parent entity id — **this is where hierarchy lives.** `parentId` is set on the assignment, not on the entity record; a root node's assignment has `parentId: null`. |
+| `parentId` | The parent entity id — **this is where hierarchy lives** (on the assignment, not the entity). **Tri-state:** *omit* = leave the current parent unchanged (a new node defaults to root); `null` = detach to root; an *entity id* = set/change the parent. **Re-parenting is leaf-only** — moving a node that still has children is rejected (surfaces as an opaque 500, not transient; move/archive children first). |
 | `featureId` **or** `currencyId` | What's limited — exactly one on the wire: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). There is no `capability` field; "capability" is just the shorthand for whichever of the two you set. |
 | `usageLimit` | The budget for one cadence window. |
 | `cadence` | ISO-8601 duration for the reset window — `'P1M'` (monthly), `'P1D'` (daily), `'P1W'` (weekly), `'P1Y'` (yearly). |
@@ -46,6 +46,19 @@ await client.v1Beta.customers.assignments.upsert('customer-123', {
 });
 ```
 
+## Re-parenting — re-upsert with a new `parentId`
+
+To move a node in the tree, re-upsert its assignment (matched by `(entityId, capability, scopeEntityIds)`) with a new `parentId`. Omitted fields (`usageLimit`, `cadence`) are preserved:
+
+```ts
+// Move team-ip from dept-legal to dept-finance — usageLimit/cadence preserved.
+await client.v1Beta.customers.assignments.upsert('customer-123', {
+  assignments: [{ entityId: 'team-ip', parentId: 'dept-finance', featureId: 'api_calls' }],
+});
+```
+
+Leaf-only: if `team-ip` itself has children, this is rejected (opaque 500) — re-parent or archive those children first. Wiring this into your restructure code path: `entity-lifecycle.md`.
+
 ## Interaction with the hierarchy
 
 Assignments at different levels stack as independent gates: usage attributed to `agent-7` counts against `agent-7`'s, `team-ip`'s, and `dept-legal`'s budgets simultaneously, and **any** exhausted level blocks the leaf (see `enforcement-and-usage.md`).
@@ -59,3 +72,5 @@ Assignments at different levels stack as independent gates: usage attributed to 
 | Assuming a child's budget caps the parent | Roll-up goes upward only — a parent limit constrains all descendants, not vice versa. |
 | Writing `cadence: 'monthly'` | ISO-8601 durations only — `'P1M'`. |
 | Budgeting in USD via `currencyId` | Credit currencies only. Money budgets go through credit cost modeling (`stigg-credits`). |
+| Re-parenting a node with children | Leaf-only — rejected (opaque 500). Move/archive children first. |
+| Expecting assignment upsert to validate entitlement | No validation at assignment time. The feature must be entitled by an active subscription first, or the later check denies (`NoActiveSubscription`/`NoFeatureEntitlementInSubscription`). |

@@ -1,6 +1,6 @@
 ---
 name: stigg-governance
-description: Use for per-entity budget and spend-control work in Stigg Governance — defining entity types with attribution keys, building a customer's entity hierarchy (departments / teams / agents / cost centers), assigning usage limits per entity for a feature or credit currency, dimensional scoping, querying the governance tree for balances, and enforcing budgets at runtime. Triggers include "per-department budget", "per-team spend limit", "per-agent token cap", "entity type", "entity hierarchy", "attribution keys", "governance tree", "usage limit per entity", "budget enforcement", "scoped assignment", "GovernanceNotEnabled", "cost center", "sub-customer limits". Skip for account-level credit grants / pools / ledger (stigg-credits), feature gating with no entity hierarchy (stigg-entitlements), or catalog modeling (stigg-pricing-modeling).
+description: Use for per-entity budget and spend-control work in Stigg Governance — defining entity types with attribution keys, building a customer's entity hierarchy (departments / teams / agents / cost centers), assigning usage limits per entity for a feature or credit currency, dimensional scoping, querying the governance tree for balances, and enforcing budgets at runtime. Triggers include "per-department budget", "per-team spend limit", "per-agent token cap", "entity type", "entity hierarchy", "attribution keys", "governance tree", "usage limit per entity", "budget enforcement", "scoped assignment", "GovernanceNotEnabled", "cost center", "sub-customer limits", "keep entities in sync", "re-parent entity", "archive entity", "CannotReportUsageForEntitlementWithMeterError". Skip for account-level credit grants / pools / ledger (stigg-credits), feature gating with no entity hierarchy (stigg-entitlements), or catalog modeling (stigg-pricing-modeling).
 ---
 
 # Stigg Governance — Per-Entity Budget Enforcement
@@ -31,7 +31,7 @@ To confirm **"not enabled ≠ bad key,"** pair the probe with a non-governance r
 
 ## Prerequisites — an entitling subscription
 
-Governance budgets sit *on top of* an existing entitlement, they don't replace it. The gating check only reaches the governance chain when the customer has an **ACTIVE subscription that entitles the feature/credit** — otherwise it short-circuits with a standard denial (`NoActiveSubscription` = no active subscription; `NoFeatureEntitlementInSubscription` = subscribed but the plan lacks the feature) and never consults the tree.
+Governance budgets sit *on top of* an existing entitlement, they don't replace it. The gating check only reaches the governance chain when the customer has an **ACTIVE subscription that entitles the feature/credit** — otherwise it short-circuits with a standard denial (`NoActiveSubscription`; `NoFeatureEntitlementInSubscription` = subscribed but the plan lacks the feature) and never consults the tree. This is a **permanent ordering requirement** from the Stigg 1.0 ↔ 2.0 coupling, not a beta gap: **entitle the feature via an active subscription BEFORE checks can pass.** Assignment upsert does **no** entitlement validation — it accepts a budget for an un-entitled feature and the gap only surfaces later at check time. Order it: catalog + subscription first, then budgets.
 
 Setting up that catalog (plan, feature, subscription — and note a FREE plan needs `charges.pricingType` before it can be published) is **not** governance's job. Do it via **`stigg-pricing-modeling`** (catalog) and **`stigg-subscriptions`** (provisioning), then come back to add per-entity budgets.
 
@@ -79,7 +79,11 @@ An **entity type** declares a kind of sub-customer unit ("department", "team", "
 
 ## Entities
 
-**Entities** are the per-customer instances of those types — up to **4 levels** deep (e.g. org → department → team → agent). The entity record itself is flat (`id`, `entityTypeId`, `metadata`); **hierarchy is expressed by `parentId` on the *assignment*, not on the entity** — the entity upsert rejects `parentId`. Operations: **list / get / upsert (bulk `PUT`) / archive / unarchive** — **archive applies to leaves only**; re-parent or archive children first. Full rules: `references/entity-model.md`.
+**Entities** are the per-customer instances of those types — up to **4 levels** deep (e.g. org → department → team → agent). The record is flat (`id`, `entityTypeId`, `metadata`); **hierarchy is `parentId` on the *assignment*, not the entity** — the entity upsert rejects `parentId`, and `metadata` (free-form, no structural role) is **not** a place to model a parent. Operations: **list / get / upsert (bulk `PUT`) / archive / unarchive**. **Re-parenting is leaf-only** (a non-leaf move is rejected); **archive is NOT leaf-gated** — archiving a parent orphans its still-active children, so archive/re-home descendants bottom-up yourself. Full rules: `references/entity-model.md`.
+
+## Keeping Entities in Sync
+
+Entities are an **ongoing mirror of the vendor's source of truth**, not a one-time import — the hierarchy lives in your system first; the tree is a projection. Wire governance ops into the code paths that mutate your model: **register → entity upsert; rename/attribute-change → idempotent re-upsert; deprovision/delete → archive (bottom-up); restructure → re-upsert the assignment's `parentId` (leaf-only)**. The model is arbitrary — user/team/workspace/org are illustrative only. Since upsert is idempotent bulk `PUT`, a declarative "push the desired tree each sync" pattern works. Full mapping + the unshipped allocation-return caveat: `references/entity-lifecycle.md`.
 
 ## Assignments — the Budgets
 
@@ -95,11 +99,16 @@ An **assignment** sets a limit for one `(entity, capability)` pair:
 
 Operations: **list / upsert**. A `currencyId` capability budgets *credit consumption* — unrelated to billing currency (USD/EUR). Worked examples: `references/assignments.md`.
 
-## Reporting Usage — Not Raw Events
+## Reporting Usage — the Meter-Type Fork
 
-The **primary governance ingest path is `POST /api/v1/usage`** (SDK `client.v1.usage.report`) — a **synchronous, meter-free** report that increments the counter and rolls up the entity tree immediately (the response echoes `currentUsage`). This is what budgets accrue against. Carry attribution in **`dimensions`**: put the entity type's **attributionKey values** there (e.g. `{ "departmentId": "dept-legal", "agentId": "agent-7" }`) and Stigg attributes the usage to the matching entity **and every ancestor**. Required fields: `customerId`, `featureId` (feature OR credit id), `value`; up to 100 usages per request.
+Ingest never gates; it records consumption and rolls up the tree. **The endpoint depends on the target feature's meter type:**
 
-> **Do NOT default to `POST /api/v1/events` for governance.** Raw events (`client.v1.events.report`) are a **secondary, high-volume, eventually-consistent** path that only accrue when the feature has a **configured event meter** — with no meter they're accepted but **silently never accrue**. Reach for events only for high-throughput metering where the meter exists; otherwise report usage. Full shapes and worked examples: `references/enforcement-and-usage.md`.
+- **Calculated / incremental meters** (your app computes the number) → **`POST /api/v1/usage`** (`client.v1.usage.report`): synchronous, echoes `currentUsage`. Required: `customerId`, `featureId` (feature OR credit id), `value`.
+- **Raw-events meters** (Stigg aggregates raw events — count/sum/unique) → **`POST /api/v1/events`** (`client.v1.events.report`, reportEvent): the **required** path for these today (usage-reporting events isn't supported); high-volume, eventually-consistent. reportEvent has **no `featureId`** — the meter is matched by **`eventName`** (+`idempotencyKey`).
+
+Both carry attribution in **`dimensions`** (the entity type's attributionKey values, e.g. `{ "departmentId": "dept-legal", "agentId": "agent-7" }`) → attributes to the matching entity **and every ancestor**.
+
+> **Meter type isn't reliably readable via the API** (the `meterType` enum has no "raw events" value; event meters live in a separate `meter` config). So **try then fall back**: call `usage.report`; on **`CannotReportUsageForEntitlementWithMeterError`** it's a raw-events meter — switch to `events.report`. Shapes + examples: `references/enforcement-and-usage.md`.
 
 ## Enforcement and Balances
 
@@ -117,10 +126,12 @@ Two distinct reads — do not mix them up:
 | Assignments — list / upsert | customer assignment routes | `client.v1Beta.customers.assignments.*` |
 | Entitlements check | `GET /api/v1-beta/customers/{id}/entitlements/check` (never gated) | `client.v1Beta.customers.entitlements.check` |
 | Governance tree query | `GET /api/v1-beta/customers/{id}/governance?featureIds=…&currencyIds=…` | `client.v1.events.beta.customers.retrieveGovernance(id)` |
-| Usage reporting (primary) | `POST /api/v1/usage` | `client.v1.usage.report` |
-| Raw events (secondary, meter required) | `POST /api/v1/events` | `client.v1.events.report` |
+| Ingest — calculated/incremental meter | `POST /api/v1/usage` | `client.v1.usage.report` |
+| Ingest — raw-events meter (by `eventName`) | `POST /api/v1/events` | `client.v1.events.report` |
 
 Wart to expect: **the tree query lives under `client.v1.events.beta.customers`**, not `client.v1Beta.customers` like its siblings — a known naming inconsistency. Don't "fix" it by guessing a `v1Beta` equivalent. Confirm exact routes via `search_docs` first.
+
+**API vs UI — different assignment models, by design.** The API is the programmatic source of truth and targets **one capability per assignment** (`(entity, featureId|currencyId)`). The dashboard UI intentionally **auto-creates an unlimited assignment across ALL capabilities** per entity (you edit limits per row). So UI-created and API-created entities look different — don't be surprised switching between them, and don't "repair" one to match the other.
 
 **Via the Stigg MCP:** the MCP exposes only **`execute`** (sandboxed TypeScript over the SDK) and **`search_docs`** — there is **no** one-tool-per-endpoint mapping. Governance ops go through `execute` using the SDK namespaces above.
 
@@ -150,9 +161,14 @@ A **401 on `execute` while `search_docs` still works** usually means the key is 
 | Debugging "team has budget but is blocked" as a bug | Ancestor semantics: any exhausted ancestor blocks the whole subtree. Check the tree upward. |
 | Defining more than 2 attribution keys, or >4 hierarchy levels | Hard limits. Redesign the model (e.g. fold a level into `scopeEntityIds`). |
 | Reporting usage without attribution-key dimensions | Usage won't attribute to any entity — budgets never accrue. Design dimensions up front. |
-| Reaching for `POST /api/v1/events` to feed governance | Events need a configured event meter or they silently never accrue. Use `POST /api/v1/usage` (synchronous, meter-free) unless you need high-volume metering *and* have set up the meter. |
+| Always calling `POST /api/v1/usage`, or always `POST /api/v1/events` | It's a meter-type fork. Calculated/incremental → `usage.report`; raw-events → `events.report` (reportEvent, by `eventName`). If `usage.report` returns `CannotReportUsageForEntitlementWithMeterError`, switch to reportEvent. |
+| Passing a `featureId` to reportEvent | reportEvent targets the meter by `eventName` (+`idempotencyKey`), not `featureId`; attribution rides in `dimensions`. |
+| Creating an assignment and expecting checks to pass | Assignment upsert does no entitlement validation. The feature must be entitled via an active subscription first (permanent 1.0↔2.0 ordering), else check denies with `NoActiveSubscription`/`NoFeatureEntitlementInSubscription`. |
 | Reading the tree and getting `null` limits/usage | Tree-only mode. Pass `featureIds`/`currencyIds` to hydrate config + usage. |
 | Assuming a 401 / missing-key MCP error means "stop" | The MCP backend may not serve your key's environment (often a staging key). Take shapes from `search_docs`/docs and call REST directly with `X-API-KEY`. |
-| Archiving an entity that still has children | Archive is leaves-only. Re-parent or archive children first. |
+| Re-parenting a node that still has children | Re-parent is leaf-only — a non-leaf move is rejected (surfaces as an opaque 500, not transient). Move/archive children first, then move the former parent. |
+| Assuming archive is leaves-only | It isn't — archiving a parent orphans its active children. Archive/re-home descendants bottom-up yourself; the platform won't stop you. |
+| Modeling an entity's parent via `metadata` | `metadata` is free-form and structural-role-free. Hierarchy is `parentId` on the assignment only. |
+| Treating entities as a one-time import | They're an ongoing mirror of your source of truth — wire upsert/archive/re-parent into your create/update/delete/restructure paths (`references/entity-lifecycle.md`). |
 | Reading `currencyId` capability as billing currency | It's a credit currency (see `stigg-credits`), not USD/EUR. |
 | Expecting per-endpoint MCP tools for governance | The MCP has only `execute` + `search_docs`. Drive the SDK through `execute`. |
