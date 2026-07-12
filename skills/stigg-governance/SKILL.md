@@ -13,7 +13,7 @@ Governance layers **per-entity budget enforcement** on top of Stigg credits and 
 
 Governance is **account-gated**. Before any governance work, hit one governance endpoint (the tree query is a safe read) and check the response:
 
-- **HTTP 403** with body exactly:
+- **HTTP 403** whose error `code` is **`GovernanceNotEnabled`** — key on the code, not the message. The body looks like this (message is illustrative and i18n-fragile, so don't match on it):
 
   ```json
   {"code":"GovernanceNotEnabled","message":"Governance is not enabled for this account. Please contact Stigg to enable Governance."}
@@ -25,7 +25,7 @@ Governance is **account-gated**. Before any governance work, hit one governance 
 
 The gate fires **before customer resolution**, so a **placeholder/fake customer id is a valid preflight probe** — you don't need to provision a real customer first; `GET /governance` on any id returns the 403 (or the empty 200) purely off the account flag.
 
-To cleanly confirm **"not enabled ≠ bad key,"** pair the probe with a non-governance read like `customers.list`: if that succeeds but the governance call 403s, it's the feature flag, not auth. (A key that's simply wrong 401s everywhere.)
+To confirm **"not enabled ≠ bad key,"** pair the probe with a non-governance read like `customers.list`: if that succeeds but the governance call 403s, it's the feature flag, not auth (a wrong key 401s everywhere).
 
 `/entitlements/check` is **never** gated — entitlement checks keep working regardless of governance enablement.
 
@@ -87,7 +87,8 @@ An **assignment** sets a limit for one `(entity, capability)` pair:
 
 | Field | Meaning |
 |---|---|
-| `capability` | What's being limited — a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). |
+| `entityId` | The entity being budgeted (any tree level — org / department / team / agent). |
+| `featureId` **or** `currencyId` | The capability being limited — exactly one: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). Mutually exclusive; there is no `capability` field on the wire. |
 | `usageLimit` | The budget for the cadence window. |
 | `cadence` | ISO-8601 duration, e.g. `'P1M'` (monthly), `'P1D'` (daily). |
 | `scopeEntityIds` | Optional — restricts the limit to usage attributed to specific (typically dimensional) entities, instead of everything under the assignee. |
@@ -119,7 +120,7 @@ Two distinct reads — do not mix them up:
 | Usage reporting (primary) | `POST /api/v1/usage` | `client.v1.usage.report` |
 | Raw events (secondary, meter required) | `POST /api/v1/events` | `client.v1.events.report` |
 
-Wart to expect: **the tree query lives under `client.v1.events.beta.customers`**, not `client.v1Beta.customers` like its siblings — a known naming inconsistency. Don't "fix" it by guessing a `v1Beta` equivalent. Confirm exact routes and body shapes via `search_docs` first — the v1-beta surface moves.
+Wart to expect: **the tree query lives under `client.v1.events.beta.customers`**, not `client.v1Beta.customers` like its siblings — a known naming inconsistency. Don't "fix" it by guessing a `v1Beta` equivalent. Confirm exact routes via `search_docs` first.
 
 **Via the Stigg MCP:** the MCP exposes only **`execute`** (sandboxed TypeScript over the SDK) and **`search_docs`** — there is **no** one-tool-per-endpoint mapping. Governance ops go through `execute` using the SDK namespaces above.
 
@@ -130,9 +131,7 @@ The MCP backend binds to an environment via the server key. If it can't serve yo
 1. Take the request shapes from `search_docs` (or the Mintlify Stigg docs) — reading docs needs no working execute backend.
 2. Call the **REST API directly** with your `X-API-KEY`: `/api/v1` for usage/events, `/api/v1-beta` for the governance surface. Shapes match what the SDK sends.
 
-A **401 on `execute` while `search_docs` still works** usually means the key is a **staging key** — the MCP execute backend targets prod. If a direct REST call to the prod Core host (`api.stigg.io`) also 401s, retry against **`api-staging.stigg.io`**.
-
-Reserve `execute` for when it works; the REST path is always available with the server key.
+A **401 on `execute` while `search_docs` still works** usually means the key is a **staging key** — the MCP execute backend targets prod. If a direct REST call to the prod Core host (`api.stigg.io`) also 401s, retry against **`api-staging.stigg.io`**. The REST path is always available with the server key.
 
 ## When NOT to Use This Skill
 

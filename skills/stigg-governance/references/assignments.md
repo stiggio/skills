@@ -8,7 +8,7 @@ An assignment is the budget itself: a usage limit for one entity on one capabili
 |---|---|
 | `entityId` | The entity being budgeted (any level of the tree — org, department, team, agent). |
 | `parentId` | The parent entity id — **this is where hierarchy lives.** `parentId` is set on the assignment, not on the entity record; a root node's assignment has `parentId: null`. |
-| `capability` | What's limited: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). Exactly one. |
+| `featureId` **or** `currencyId` | What's limited — exactly one on the wire: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). There is no `capability` field; "capability" is just the shorthand for whichever of the two you set. |
 | `usageLimit` | The budget for one cadence window. |
 | `cadence` | ISO-8601 duration for the reset window — `'P1M'` (monthly), `'P1D'` (daily), `'P1W'` (weekly), `'P1Y'` (yearly). |
 | `scopeEntityIds` | Optional — narrows which attributed usage counts against this limit (see below). |
