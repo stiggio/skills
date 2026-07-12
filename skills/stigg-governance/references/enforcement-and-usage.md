@@ -35,6 +35,8 @@ Gate requests with the standard entitlements check — `GET /api/v1-beta/custome
 
 The response is `{ isGranted, type, accessDeniedReason, usageLimit, currentUsage, chains: [...] }`. Each `chains[][]` node carries `entityId`, `usageLimit`, `currentUsage`, and its own `isGranted` — to find the binding constraint on a denial, flatten `chains` and pick the first node with `isGranted: false`.
 
+An over-limit governance denial can surface as `accessDeniedReason: "RequestedUsageExceedingLimit"` — not only `"BudgetExceeded"`. Both mean the same thing (`isGranted: false` with the binding node's `isGranted: false` in the chain); which string you get depends on whether the *requested* usage alone would exceed the limit vs. the budget being already spent. Don't branch behavior on the string — read the chain for the binding node.
+
 ### Prerequisite — an entitling active subscription
 
 The governance chain is only consulted when the customer already has an **ACTIVE subscription entitling the requested feature/credit**. Without one, the check short-circuits before governance:

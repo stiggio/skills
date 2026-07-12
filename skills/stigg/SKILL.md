@@ -69,6 +69,8 @@ Decision flowchart with edge cases: `references/decision-tree.md`. CLI vs MCP de
 | Choosing the right pricing / monetization model | `stigg-pricing-expert` |
 | Multi-step recipes (freemium, hybrid, AI-credits, trials) | `stigg-recipes` |
 
+The sub-skills (`stigg-mcp`, `stigg-governance`, …) are **sibling directories** of `stigg/`, not nested under it — `skills/stigg/` and `skills/stigg-governance/` sit side by side. Invoke them by name; don't look for them inside `stigg/`.
+
 If a sub-skill exists for the task, invoke it via the Skill tool — do not improvise content from outside this repo, and do not stall waiting for the user to type its slash command.
 
 ## Stigg in 60 Seconds
