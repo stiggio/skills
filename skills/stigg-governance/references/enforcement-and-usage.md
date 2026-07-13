@@ -6,7 +6,7 @@ The runtime half of governance: how usage lands on entities, how access is gated
 
 Ingest never gates; it records consumption and rolls it up the tree. **Which endpoint to call depends on the target feature's meter type.** In both paths, attribution happens through **dimensions**:
 
-1. The entity type declares up to 2 `attributionKeys` (e.g. `departmentId`, `agentId`).
+1. The entity type declares up to 2 `attributionKeys` (e.g. `projectId`, `regionId` — whatever identifies the customer's units).
 2. Your ingest call carries those keys' values in `dimensions`.
 3. Stigg matches dimension values to entity IDs and attributes the usage to the entity **and all of its ancestors**.
 
@@ -23,7 +23,7 @@ Features whose usage your app computes and reports directly use **`POST /api/v1/
     "customerId": "customer-123",
     "featureId": "feature-ai-tokens",
     "value": 1250,
-    "dimensions": { "departmentId": "dept-legal", "agentId": "agent-7" }
+    "dimensions": { "projectId": "proj-atlas", "regionId": "eu-west" }
   }]
 }
 // → 201; data[].currentUsage reflects the rolled-up total (ancestors included)
@@ -42,7 +42,7 @@ The event does **not** carry a `featureId`. The meter is matched by **`eventName
     "customerId": "customer-123",
     "eventName": "ai-tokens-consumed",
     "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "dimensions": { "departmentId": "dept-legal", "agentId": "agent-7" }
+    "dimensions": { "projectId": "proj-atlas", "regionId": "eu-west" }
   }]
 }
 // → 202 accepted; accrues asynchronously
@@ -73,7 +73,7 @@ The governance chain is only consulted when the customer already has an **ACTIVE
 
 > An entity's `hasAccess` is **blocked when ANY ancestor has hit its hard limit.**
 
-`agent-7` with a fresh personal budget is still denied if `team-ip` or `dept-legal` is exhausted. Corollaries:
+A leaf with a fresh budget of its own is still denied if any ancestor above it is exhausted. Corollaries:
 
 - Debugging "this entity has budget but is denied" means walking **up** the tree, not inspecting the leaf.
 - A parent's budget is a real ceiling on the whole subtree — children's limits can sum past it, and the parent still wins.
@@ -103,7 +103,7 @@ With those, each row fills in `usageLimit` / `currentUsage` / `utilization` / `c
 The tree's usage figures come from a **read model that may lag by minutes**. Consequences:
 
 - **Never gate access from the tree.** Gating belongs to the entitlements check, which enforces in the access path.
-- Do use the tree for: budget dashboards, burn-down alerts ("dept-legal at 80%"), reconciliation, admin UIs.
+- Do use the tree for: budget dashboards, burn-down alerts ("proj-atlas at 80%"), reconciliation, admin UIs.
 - A freshly reported event not showing in the tree for a few minutes is expected behavior, not data loss.
 
 ## Putting it together — the runtime loop

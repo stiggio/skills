@@ -4,7 +4,7 @@ The structural half of governance: what kinds of units exist (entity types) and 
 
 ## Entity Types (per environment)
 
-An entity type declares a category of sub-customer unit and how usage events map onto it.
+An entity type declares a category of sub-customer unit — whatever the customer defined (see SKILL.md Step 1; the model is arbitrary, not a fixed dept/team/agent hierarchy) — and how usage events map onto it.
 
 | Aspect | Rule |
 |---|---|
@@ -17,19 +17,19 @@ An entity type declares a category of sub-customer unit and how usage events map
 
 Attribution keys are the join between your event stream and the governance tree — get them right **before** reporting usage:
 
-- Pick dimensions your app already emits (or can start emitting) on every relevant event: `departmentId`, `teamId`, `agentId`, `workspaceId`.
+- Pick dimensions your app already emits (or can start emitting) on every relevant event — whatever identifies the customer's units (e.g. `projectId`, `regionId`, `tenantId`, `costCenterId`).
 - Two keys max per type. If you're tempted to add a third, that's usually a sign one "key" is really a dimensional scope — model it with `scopeEntityIds` on the assignment instead (see `assignments.md`).
 - There is no retroactive attribution. Events reported before the dimensions existed never attribute.
 
 ## Entities (per customer)
 
-Entities are the instances: *this* customer's departments, teams, and agents.
+Entities are the instances: *this* customer's own units (whatever they defined in Step 1 — projects, regions, tenants, cost centers, …).
 
 | Aspect | Rule |
 |---|---|
 | Scope | Per customer. |
 | Record shape | Flat: `id`, `entityTypeId`, `metadata` (free-form key/value; patch semantics — `""` deletes a key, omitted keys preserved). **No `parentId` on the entity** — the entity upsert rejects it (`Unrecognized key "parentId"`). `metadata` has **no structural role**: don't model a parent through it. |
-| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels** (e.g. org → department → team → agent). **Re-parenting is leaf-only** (see `assignments.md`). |
+| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels**, in whatever shape the customer defined. **Re-parenting is leaf-only** (see `assignments.md`). |
 | Operations | **List / get / upsert (bulk `PUT`) / archive / unarchive**. Default list excludes archived. |
 | Archive | **Not leaf-gated.** Archiving a parent succeeds even with children — the children stay active but orphaned (their assignments still point at the archived parent). To retire a subtree cleanly, archive/re-home **descendants first** yourself. Unarchive restores an entity. The "archive the leaves first" rule people expect is really the **re-parent** constraint, not archive. |
 | SDK | `client.v1Beta.customers.entities.*` |
@@ -42,6 +42,8 @@ Entities are the instances: *this* customer's departments, teams, and agents.
 
 ### Example — upsert entities, then wire the hierarchy on the assignments
 
+> **This is ONE possible model — ask your customer for theirs; it is not a default.** The `client → project` shape below is illustrative; it teaches the API's shape, not the hierarchy to adopt.
+
 Entities are declared **flat** — `parentId` does **not** belong here. The tree is expressed when you upsert assignments (see `assignments.md`), where each assignment carries the `parentId` linking a node to its parent.
 
 ```ts
@@ -49,9 +51,9 @@ Entities are declared **flat** — `parentId` does **not** belong here. The tree
 // 1) Entities: flat records, no parentId.
 await client.v1Beta.customers.entities.upsert('customer-123', {
   entities: [
-    { id: 'dept-legal', entityTypeId: 'department' },
-    { id: 'team-ip',    entityTypeId: 'team' },
-    { id: 'agent-7',    entityTypeId: 'agent' },
+    { id: 'client-acme',  entityTypeId: 'client' },
+    { id: 'proj-atlas',   entityTypeId: 'project' },
+    { id: 'proj-borealis', entityTypeId: 'project' },
   ],
 });
 // 2) parentId is set on the assignment (see assignments.md).

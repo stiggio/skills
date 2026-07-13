@@ -6,7 +6,7 @@ An assignment is the budget itself: a usage limit for one entity on one capabili
 
 | Field | Meaning |
 |---|---|
-| `entityId` | The entity being budgeted (any level of the tree — org, department, team, agent). |
+| `entityId` | The entity being budgeted (any level of the customer's tree). |
 | `parentId` | The parent entity id — **this is where hierarchy lives** (on the assignment, not the entity). **Tri-state:** *omit* = leave the current parent unchanged (a new node defaults to root); `null` = detach to root; an *entity id* = set/change the parent. **Re-parenting is leaf-only** — moving a node that still has children is rejected (surfaces as an opaque 500, not transient; move/archive children first). |
 | `featureId` **or** `currencyId` | What's limited — exactly one on the wire: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). There is no `capability` field; "capability" is just the shorthand for whichever of the two you set. |
 | `usageLimit` | The budget for one cadence window. |
@@ -17,8 +17,8 @@ Operations: **list / upsert**. SDK: `client.v1Beta.customers.assignments.*`.
 
 ## Feature vs credit-currency capability
 
-- **`featureId`** — budgets a metered feature directly: "team-ip may make 10k `api_calls` per month."
-- **`currencyId`** — budgets **credit consumption** in that currency: "dept-legal may burn 50k `ai_tokens` credits per month." This is a Stigg credit currency (see `stigg-credits`), **not** a billing currency — there is no USD/EUR budgeting here.
+- **`featureId`** — budgets a metered feature directly: "`proj-atlas` may make 10k `api_calls` per month."
+- **`currencyId`** — budgets **credit consumption** in that currency: "`client-acme` may burn 50k `ai_tokens` credits per month." This is a Stigg credit currency (see `stigg-credits`), **not** a billing currency — there is no USD/EUR budgeting here.
 
 Pick the credit-currency form when multiple features drain one pool and you want a single budget over all of them; pick the feature form for per-feature caps.
 
@@ -26,7 +26,7 @@ Pick the credit-currency form when multiple features drain one pool and you want
 
 By default an assignment covers **all** usage attributed to the entity (including roll-up from descendants). `scopeEntityIds` restricts the counted usage to specific entities — the tool for **high-cardinality or dimensional** cases where creating a hierarchy level per value would blow the 4-level / tree-size budget:
 
-> "Limit dept-legal's usage of *model-gpt5* to 10k credits/month" — model the models as entities of a dimensional entity type, then scope the department's assignment with `scopeEntityIds: ['model-gpt5']` instead of adding a hierarchy level under every department.
+> "Limit `proj-atlas`'s usage of *model-gpt5* to 10k credits/month" — model the models as entities of a dimensional entity type, then scope the project's assignment with `scopeEntityIds: ['model-gpt5']` instead of adding a hierarchy level under every project.
 
 ## Cadence semantics
 
@@ -35,13 +35,15 @@ By default an assignment covers **all** usage attributed to the entity (includin
 
 ## Example — upsert assignments (via MCP `execute`, which runs SDK code)
 
+Continuing the **one possible model** (`client → project`) from `entity-model.md` — ask your customer for theirs, this is not a default:
+
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
 // parentId on the assignment is what builds the hierarchy (root = parentId: null).
 await client.v1Beta.customers.assignments.upsert('customer-123', {
   assignments: [
-    { entityId: 'dept-legal', parentId: null,        currencyId: 'ai_tokens', usageLimit: 50000, cadence: 'P1M' },
-    { entityId: 'team-ip',    parentId: 'dept-legal', featureId: 'api_calls',  usageLimit: 10000, cadence: 'P1M' },
+    { entityId: 'client-acme', parentId: null,          currencyId: 'ai_tokens', usageLimit: 50000, cadence: 'P1M' },
+    { entityId: 'proj-atlas',  parentId: 'client-acme',  featureId: 'api_calls',  usageLimit: 10000, cadence: 'P1M' },
   ],
 });
 ```
@@ -51,17 +53,17 @@ await client.v1Beta.customers.assignments.upsert('customer-123', {
 To move a node in the tree, re-upsert its assignment (matched by `(entityId, capability, scopeEntityIds)`) with a new `parentId`. Omitted fields (`usageLimit`, `cadence`) are preserved:
 
 ```ts
-// Move team-ip from dept-legal to dept-finance — usageLimit/cadence preserved.
+// Move proj-atlas from client-acme to client-globex — usageLimit/cadence preserved.
 await client.v1Beta.customers.assignments.upsert('customer-123', {
-  assignments: [{ entityId: 'team-ip', parentId: 'dept-finance', featureId: 'api_calls' }],
+  assignments: [{ entityId: 'proj-atlas', parentId: 'client-globex', featureId: 'api_calls' }],
 });
 ```
 
-Leaf-only: if `team-ip` itself has children, this is rejected (opaque 500) — re-parent or archive those children first. Wiring this into your restructure code path: `entity-lifecycle.md`.
+Leaf-only: if `proj-atlas` itself has children, this is rejected (opaque 500) — re-parent or archive those children first. Wiring this into your restructure code path: `entity-lifecycle.md`.
 
 ## Interaction with the hierarchy
 
-Assignments at different levels stack as independent gates: usage attributed to `agent-7` counts against `agent-7`'s, `team-ip`'s, and `dept-legal`'s budgets simultaneously, and **any** exhausted level blocks the leaf (see `enforcement-and-usage.md`).
+Assignments at different levels stack as independent gates: usage attributed to a leaf counts against the leaf's budget and every ancestor's budget simultaneously, and **any** exhausted level blocks the leaf (see `enforcement-and-usage.md`).
 
 ## Common mistakes
 
