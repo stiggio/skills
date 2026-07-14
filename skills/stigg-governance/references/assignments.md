@@ -7,7 +7,7 @@ An assignment is the budget itself: a usage limit for one entity on one capabili
 | Field | Meaning |
 |---|---|
 | `entityId` | The entity being budgeted (any level of the customer's tree). |
-| `parentId` | The parent entity id — **this is where hierarchy lives** (on the assignment, not the entity). **Tri-state:** *omit* = leave the current parent unchanged (a new node defaults to root); `null` = detach to root; an *entity id* = set/change the parent. **Re-parenting is leaf-only** — moving a node that still has children is rejected (surfaces as an opaque 500, not transient; move/archive children first). |
+| `parentId` | The entity's **single parent** — one position per entity, set here to place/move the node (not a per-capability value). **Tri-state:** *omit* = leave the parent unchanged (a new node defaults to root); `null` = make it a root; an *entity id* = set/change the parent. This payload is flat (one row per entity × capability × scope), so the same entity across rows carries the same `parentId`. **Re-parenting is leaf-only** — moving a node that still has children is rejected (surfaces as an opaque 500, not transient; move/archive children first). |
 | `featureId` **or** `currencyId` | What's limited — exactly one on the wire: a **`featureId`** (metered feature) **or** a **`currencyId`** (credit currency). There is no `capability` field; "capability" is just the shorthand for whichever of the two you set. |
 | `usageLimit` | The budget for one cadence window. |
 | `cadence` | ISO-8601 duration for the reset window — `'P1M'` (monthly), `'P1D'` (daily), `'P1W'` (weekly), `'P1Y'` (yearly). |
@@ -39,7 +39,7 @@ Continuing the **one possible model** (`client → project`) from `entity-model.
 
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
-// parentId on the assignment is what builds the hierarchy (root = parentId: null).
+// Set parentId here to place each node in the tree (root = parentId: null).
 await client.v1Beta.customers.assignments.upsert('customer-123', {
   assignments: [
     { entityId: 'client-acme', parentId: null,          currencyId: 'ai_tokens', usageLimit: 50000, cadence: 'P1M' },
@@ -48,9 +48,9 @@ await client.v1Beta.customers.assignments.upsert('customer-123', {
 });
 ```
 
-## Re-parenting — re-upsert with a new `parentId`
+## Re-parenting — set a new `parentId` on `upsertAssignment`
 
-To move a node in the tree, re-upsert its assignment (matched by `(entityId, capability, scopeEntityIds)`) with a new `parentId`. Omitted fields (`usageLimit`, `cadence`) are preserved:
+To move a node in the tree, call `upsertAssignment` for the entity with a new `parentId`. `parentId` is the entity's single parent, so this moves the node itself. Omitted fields (`usageLimit`, `cadence`) are preserved:
 
 ```ts
 // Move proj-atlas from client-acme to client-globex — usageLimit/cadence preserved.

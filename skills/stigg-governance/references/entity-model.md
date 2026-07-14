@@ -28,8 +28,8 @@ Entities are the instances: *this* customer's own units (whatever they defined i
 | Aspect | Rule |
 |---|---|
 | Scope | Per customer. |
-| Record shape | Flat: `id`, `entityTypeId`, `metadata` (free-form key/value; patch semantics — `""` deletes a key, omitted keys preserved). **No `parentId` on the entity** — the entity upsert rejects it (`Unrecognized key "parentId"`). `metadata` has **no structural role**: don't model a parent through it. |
-| Hierarchy | Set via **`parentId` on the *assignment*** (see `assignments.md`), not on the entity — **up to 4 levels**, in whatever shape the customer defined. **Re-parenting is leaf-only** (see `assignments.md`). |
+| Record shape | Flat: `id`, `entityTypeId`, `metadata` (free-form key/value; patch semantics — `""` deletes a key, omitted keys preserved). The entity upsert **rejects `parentId`** (`Unrecognized key "parentId"`), and `metadata` has **no structural role** — parenting happens on `upsertAssignment` (see Hierarchy row). |
+| Hierarchy | To place/move a node, set **`parentId` on its `upsertAssignment`** (see `assignments.md`). `parentId` is the entity's **single parent** — one position per entity, **up to 4 levels**, in whatever shape the customer defined. **Re-parenting is leaf-only** (see `assignments.md`). |
 | Operations | **List / get / upsert (bulk `PUT`) / archive / unarchive**. Default list excludes archived. |
 | Archive | **Not leaf-gated.** Archiving a parent succeeds even with children — the children stay active but orphaned (their assignments still point at the archived parent). To retire a subtree cleanly, archive/re-home **descendants first** yourself. Unarchive restores an entity. The "archive the leaves first" rule people expect is really the **re-parent** constraint, not archive. |
 | SDK | `client.v1Beta.customers.entities.*` |
@@ -40,11 +40,11 @@ Entities are the instances: *this* customer's own units (whatever they defined i
 - The 4-level cap is a hard limit. If your org model is deeper, flatten the levels that don't carry budgets.
 - Bulk `PUT` upsert makes the entity tree declarative: your provisioning code can push the desired tree on every sync and let Stigg reconcile.
 
-### Example — upsert entities, then wire the hierarchy on the assignments
+### Example — upsert entities, then set `parentId` on the assignments
 
 > **This is ONE possible model — ask your customer for theirs; it is not a default.** The `client → project` shape below is illustrative; it teaches the API's shape, not the hierarchy to adopt.
 
-Entities are declared **flat** — `parentId` does **not** belong here. The tree is expressed when you upsert assignments (see `assignments.md`), where each assignment carries the `parentId` linking a node to its parent.
+Entities are declared **flat** — `parentId` does **not** belong here. You place each node in the tree when you call `upsertAssignment` (see `assignments.md`), setting `parentId` to the node's parent.
 
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
@@ -56,7 +56,7 @@ await client.v1Beta.customers.entities.upsert('customer-123', {
     { id: 'proj-borealis', entityTypeId: 'project' },
   ],
 });
-// 2) parentId is set on the assignment (see assignments.md).
+// 2) parentId is set on the upsertAssignment call (see assignments.md).
 ```
 
 ## Common mistakes
@@ -67,5 +67,5 @@ await client.v1Beta.customers.entities.upsert('customer-123', {
 | Modeling every org level as an entity level | Only levels that carry budgets or need roll-up belong in the tree — 4 levels max. |
 | Assuming archive is leaves-only | It isn't — archiving a parent orphans its active children. Archive/re-home descendants bottom-up yourself; the platform won't block you. (Leaf-only is the *re-parent* rule.) |
 | Re-parenting a node with children | Leaf-only — rejected (opaque 500). Move/archive its children first. |
-| Modeling a parent via entity `metadata` | `metadata` is free-form and structural-role-free; hierarchy is `parentId` on the assignment. |
+| Putting `parentId` on the entity upsert (or in `metadata`) | The entity upsert rejects `parentId`, and `metadata` has no structural role. Set `parentId` on the `upsertAssignment` operation to place/move the node. |
 | Renaming attribution keys after events flow | Old events keep the old dimensions and won't re-attribute. Treat keys as append-only contracts. |

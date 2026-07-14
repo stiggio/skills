@@ -8,10 +8,10 @@ The entity model is **arbitrary**: govern any hierarchy your product needs (cost
 
 | When your source of truth… | Do this | Idempotent? |
 |---|---|---|
-| **Registers/creates** a unit (new team, project, sub-account) | Entity **upsert** (bulk `PUT`) — add the entity; add its **assignment** with `parentId` to place it in the tree | Yes — safe to replay |
+| **Registers/creates** a unit (new team, project, sub-account) | Entity **upsert** (bulk `PUT`) — add the entity; set `parentId` on its **`upsertAssignment`** to place it in the tree | Yes — safe to replay |
 | **Renames / changes attributes** of a unit | **Re-upsert** the entity (patch `metadata`) — same id, new fields | Yes |
 | **Deprovisions / deletes** a unit | **Archive** the entity (`.../entities/archive`) | Yes |
-| **Restructures / moves** a unit under a new parent | **Re-upsert the assignment** with the new `parentId` (see re-parent rules below) | Yes |
+| **Restructures / moves** a unit under a new parent | Set the new `parentId` on the entity's **`upsertAssignment`** (see re-parent rules below) | Yes |
 
 Because upsert is a bulk, idempotent `PUT` keyed by id, the cleanest sync is often **declarative**: on each sync tick (or each source-of-truth change event / webhook), push the *desired* set of entities and assignments and let Stigg reconcile. You don't have to diff — re-submitting the same payload converges to the same state.
 
@@ -19,15 +19,15 @@ Because upsert is a bulk, idempotent `PUT` keyed by id, the cleanest sync is oft
 
 These are where a naive mirror breaks. All three are verified against the live surface.
 
-### 1. Hierarchy is a re-upsert of the *assignment*, not the entity
+### 1. Placing / moving a node — set `parentId` on `upsertAssignment`
 
-`parentId` lives on the **assignment**, never on the entity — the entity upsert rejects it (`Unrecognized key(s) in request: "parentId"`). To move a unit, re-upsert its assignment (matched by `(entityId, capability, scopeEntityIds)`) with a new `parentId`. `parentId` is **tri-state**:
+To place or move a node in the tree, set `parentId` on the entity's **`upsertAssignment`** call. `parentId` is the entity's **single parent** — one position per entity, not a per-capability value. It is **tri-state**:
 
 - **omit** → leave the current parent unchanged (a brand-new node defaults to a root);
 - **`null`** → detach to a root;
 - **an entity id** → set or change the parent.
 
-Other assignment fields you omit on that re-upsert (`usageLimit`, `cadence`) are preserved. Full field reference: `assignments.md`.
+The assignment payload is flat (one row per entity × capability × scope), so if the same entity appears in several rows, `parentId` is the **same** value on each — it's the node's parent, not that row's. Practical note: the *entity* upsert rejects `parentId` (`Unrecognized key(s) in request: "parentId"`), so parenting happens on `upsertAssignment`. Other assignment fields you omit (`usageLimit`, `cadence`) are preserved. Full field reference: `assignments.md`.
 
 ### 2. Re-parenting is leaf-only — and a non-leaf move fails ugly
 
