@@ -41,39 +41,9 @@ Setting up that catalog (plan, feature, subscription — a FREE plan needs `char
 
 Per the umbrella `stigg` skill: **search first.** Governance is a private-beta surface whose shape may change — confirm operation names, field names, and body shapes via `search_docs` (or the Mintlify Stigg docs MCP) before authoring. This skill owns the mental model; the live surface owns the shapes.
 
-## Mental Model — Four Pieces
+## The Four Pieces
 
-```text
-┌─────────────────────────────────────────────┐
-│  Entity type   (per environment)            │
-│  a kind of unit the customer defines — with │
-│  attributionKeys (max 2) that map event     │
-│  dimensions → entities                      │
-└───────────────────┬─────────────────────────┘
-                    │ instantiated per customer as
-                    ▼
-┌─────────────────────────────────────────────┐
-│  Entities      (per customer)               │
-│  flat records; hierarchy set via parentId   │
-│  on the ASSIGNMENT — up to 4 levels,        │
-│  in whatever shape the customer defined     │
-└───────────────────┬─────────────────────────┘
-                    │ budgeted by
-                    ▼
-┌─────────────────────────────────────────────┐
-│  Assignments   = limit per (entity,         │
-│  capability), capability = featureId OR     │
-│  currencyId; usageLimit + cadence (ISO-8601,│
-│  e.g. 'P1M') + optional scopeEntityIds      │
-└───────────────────┬─────────────────────────┘
-                    │ observed via
-                    ▼
-┌─────────────────────────────────────────────┐
-│  Governance tree  (read model)              │
-│  nodes + usage config + current usage —     │
-│  may lag by minutes; NEVER gates access     │
-└─────────────────────────────────────────────┘
-```
+`entity type → entity → assignment → governance tree` — a **type** (which declares the attribution keys) is instantiated per customer as **entities**; an **assignment** budgets one (entity, capability) pair; the **tree** reports usage-vs-budget and never gates. Each is detailed below.
 
 ## Entity Types
 
