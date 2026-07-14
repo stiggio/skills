@@ -1,6 +1,6 @@
 # Entity Model — Entity Types and Entities
 
-The structural half of governance: what kinds of units exist (entity types) and which units a given customer actually has (entities). Field names and route paths below reflect the surface at the time of writing — the v1-beta API moves, so **confirm shapes via the Stigg MCP's `search_docs` before calling.**
+The structural half of governance: what kinds of units exist (entity types) and which units a given customer actually has (entities). Field names and SDK operations below reflect the surface at the time of writing — governance is a private-beta surface whose shape may change, so **confirm shapes via the Stigg MCP's `search_docs` before calling.**
 
 ## Entity Types (per environment)
 

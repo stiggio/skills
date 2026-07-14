@@ -5,13 +5,15 @@ description: Use for per-entity budget and spend-control work in Stigg Governanc
 
 # Stigg Governance — Per-Entity Budget Enforcement
 
-Governance layers **per-entity budget enforcement** on top of Stigg credits and features. Where credits answer "how much can this *customer* consume?", governance answers "how much can this customer's *own sub-units* consume?" — whatever the vendor needs to budget, with hierarchical roll-up and hard-limit enforcement. **The entity model is arbitrary and customer-defined** — Stigg imposes no fixed hierarchy, so don't assume one (see Step 1). The surface lives under **REST `/api/v1-beta`** (header `X-API-KEY`).
+Governance layers **per-entity budget enforcement** on top of Stigg credits and features. Where credits answer "how much can this *customer* consume?", governance answers "how much can this customer's *own sub-units* consume?" — whatever the vendor needs to budget, with hierarchical roll-up and hard-limit enforcement. **The entity model is arbitrary and customer-defined** — Stigg imposes no fixed hierarchy, so don't assume one (see Step 1).
 
-**Base URLs.** Prod Core API `https://api.stigg.io`; edge (low-latency read) `https://edge.api.stigg.io`; staging `https://api-staging.stigg.io`. Governance calls use the Core host with your server-side key in `X-API-KEY`.
+All Stigg API actions in this skill run **through the Stigg MCP** — the `execute` tool runs SDK code, `search_docs` resolves exact shapes. Governance operations use the SDK's beta namespace (e.g. `client.v1Beta.…`). This skill owns the *mental model*; it does not cover connection, keys, or setup — those belong to the **`stigg-mcp`** skill.
+
+> **Private-beta surface.** Governance is currently a **private-beta** part of the Stigg API. Its shape may change at GA, so **re-check exact routes and field names via `search_docs`** rather than treating anything here as permanent.
 
 ## Step 0 — Preflight: Is Governance Enabled? (do this FIRST)
 
-Governance is **account-gated**. Before any governance work, hit one governance endpoint (the tree query is a safe read) and check the response:
+Governance is **account-gated**. Before any governance work, run one governance operation via the MCP `execute` tool (the tree query is a safe read) and check the response:
 
 - **HTTP 403** whose error `code` is **`GovernanceNotEnabled`** — key on the code, not the message. The body looks like this (message is illustrative and i18n-fragile, so don't match on it):
 
@@ -23,11 +25,11 @@ Governance is **account-gated**. Before any governance work, hit one governance 
 
 - **HTTP 200 with empty data** → governance is **enabled but not configured yet**. Proceed to model entity types, entities, and assignments.
 
-The gate fires **before customer resolution**, so a **placeholder/fake customer id is a valid preflight probe** — you don't need to provision a real customer first; `GET /governance` on any id returns the 403 (or the empty 200) purely off the account flag.
+The gate fires **before customer resolution**, so a **placeholder/fake customer id is a valid preflight probe** — you don't need to provision a real customer first; the governance tree query on any id returns the 403 (or the empty 200) purely off the account flag.
 
-To confirm **"not enabled ≠ bad key,"** pair the probe with a non-governance read like `customers.list`: if that succeeds but the governance call 403s, it's the feature flag, not auth (a wrong key 401s everywhere).
+To confirm **"not enabled ≠ connection problem,"** pair the probe with a non-governance read like `customers.list`: if that succeeds but the governance call 403s, it's the account feature flag, not your setup. (Genuine connection/auth failures are `stigg-mcp`'s domain, not this skill's.)
 
-`/entitlements/check` is **never** gated — entitlement checks keep working regardless of governance enablement.
+The entitlements **check** is **never** gated — entitlement checks keep working regardless of governance enablement.
 
 ## Step 1 — Elicit the Model: ASK, Don't Assume (do this BEFORE defining entity types)
 
@@ -50,7 +52,7 @@ Setting up that catalog (plan, feature, subscription — a FREE plan needs `char
 
 ## Before You Start
 
-Per the umbrella `stigg` skill: **search first.** Governance is a fast-moving v1-beta surface — confirm endpoint paths, field names, and body shapes via `search_docs` (or the Mintlify Stigg docs MCP) before authoring. This skill owns the mental model; the live surface owns the shapes.
+Per the umbrella `stigg` skill: **search first.** Governance is a private-beta surface whose shape may change — confirm operation names, field names, and body shapes via `search_docs` (or the Mintlify Stigg docs MCP) before authoring. This skill owns the mental model; the live surface owns the shapes.
 
 ## Mental Model — Four Pieces
 
@@ -116,8 +118,8 @@ Operations: **list / upsert**. A `currencyId` capability budgets *credit consump
 
 Ingest never gates; it records consumption and rolls up the tree. **The endpoint depends on the target feature's meter type:**
 
-- **Calculated / incremental meters** (your app computes the number) → **`POST /api/v1/usage`** (`client.v1.usage.report`): synchronous, echoes `currentUsage`. Required: `customerId`, `featureId` (feature OR credit id), `value`.
-- **Raw-events meters** (Stigg aggregates raw events — count/sum/unique) → **`POST /api/v1/events`** (`client.v1.events.report`, reportEvent): the **required** path for these today (usage-reporting events isn't supported); high-volume, eventually-consistent. reportEvent has **no `featureId`** — the meter is matched by **`eventName`** (+`idempotencyKey`).
+- **Calculated / incremental meters** (your app computes the number) → **`client.v1.usage.report`**: synchronous, echoes `currentUsage`. Required: `customerId`, `featureId` (feature OR credit id), `value`.
+- **Raw-events meters** (Stigg aggregates raw events — count/sum/unique) → **`client.v1.events.report`** (reportEvent): the **required** path for these today (usage-reporting events isn't supported); high-volume, eventually-consistent. reportEvent has **no `featureId`** — the meter is matched by **`eventName`** (+`idempotencyKey`).
 
 Both carry attribution in **`dimensions`** (the entity type's attributionKey values, e.g. `{ "projectId": "proj-atlas", "regionId": "eu-west" }`) → attributes to the matching entity **and every ancestor**.
 
@@ -127,32 +129,28 @@ Both carry attribution in **`dimensions`** (the entity type's attributionKey val
 
 Two distinct reads — do not mix them up:
 
-1. **Access (gates requests):** the standard entitlements **check** — `GET /api/v1-beta/customers/{customerId}/entitlements/check` (SDK `client.v1Beta.customers.entitlements.check`), passing `featureId` **or** `currencyId`, optional `requestedUsage` (default 1), and attribution `dimensions`. When governance is enabled, the governance chain enriches the check. **An entity is blocked when ANY ancestor has hit its hard limit** — a child with budget left is still blocked if any of its parents is exhausted. Requires an entitling active subscription (see Prerequisites).
-2. **Balances (observability):** the **governance tree query** — `GET /api/v1-beta/customers/{customerId}/governance` — returns the entity nodes; remaining budget = `usageLimit − currentUsage`. **By default it runs tree-only: `usageLimit` / `currentUsage` / `utilization` / `cadence` come back `null`;** pass `featureIds` and/or `currencyIds` query params (repeat for multiple) to hydrate config + usage. The read model **may lag by minutes** — use it for dashboards and alerts, **never** to gate access. Full semantics: `references/enforcement-and-usage.md`.
+1. **Access (gates requests):** the standard entitlements **check** — `client.v1Beta.customers.entitlements.check`, passing `featureId` **or** `currencyId`, optional `requestedUsage` (default 1), and attribution `dimensions`. When governance is enabled, the governance chain enriches the check. **An entity is blocked when ANY ancestor has hit its hard limit** — a child with budget left is still blocked if any of its parents is exhausted. Requires an entitling active subscription (see Prerequisites).
+2. **Balances (observability):** the **governance tree query** — the `retrieveGovernance` operation (see Surface Map for its exact namespace) — returns the entity nodes; remaining budget = `usageLimit − currentUsage`. **By default it runs tree-only: `usageLimit` / `currentUsage` / `utilization` / `cadence` come back `null`;** pass `featureIds` and/or `currencyIds` params (repeat for multiple) to hydrate config + usage. The read model **may lag by minutes** — use it for dashboards and alerts, **never** to gate access. Full semantics: `references/enforcement-and-usage.md`.
 
 ## Surface Map
 
-| Operation | REST (`/api/v1-beta`, `X-API-KEY`) | `@stigg/typescript` SDK (beta) |
-|---|---|---|
-| Entity types — list / upsert (PUT bulk) | entity-type routes | `client.v1Beta.entityTypes.*` |
-| Entities — list / get / upsert (PUT bulk) / archive / unarchive | customer entity routes | `client.v1Beta.customers.entities.*` |
-| Assignments — list / upsert | customer assignment routes | `client.v1Beta.customers.assignments.*` |
-| Entitlements check | `GET /api/v1-beta/customers/{id}/entitlements/check` (never gated) | `client.v1Beta.customers.entitlements.check` |
-| Governance tree query | `GET /api/v1-beta/customers/{id}/governance?featureIds=…&currencyIds=…` | `client.v1.events.beta.customers.retrieveGovernance(id)` |
-| Ingest — calculated/incremental meter | `POST /api/v1/usage` | `client.v1.usage.report` |
-| Ingest — raw-events meter (by `eventName`) | `POST /api/v1/events` | `client.v1.events.report` |
+Operations run through the MCP `execute` tool as `@stigg/typescript` SDK calls (bulk upserts are idempotent):
 
-Wart to expect: **the tree query lives under `client.v1.events.beta.customers`**, not `client.v1Beta.customers` like its siblings — a known naming inconsistency. Don't "fix" it by guessing a `v1Beta` equivalent; confirm exact routes via `search_docs`.
+| Operation | SDK call (via MCP `execute`) |
+|---|---|
+| Entity types — list / upsert (bulk) | `client.v1Beta.entityTypes.*` |
+| Entities — list / get / upsert (bulk) / archive / unarchive | `client.v1Beta.customers.entities.*` |
+| Assignments — list / upsert | `client.v1Beta.customers.assignments.*` |
+| Entitlements check (never gated) | `client.v1Beta.customers.entitlements.check` |
+| Governance tree query (pass `featureIds` / `currencyIds` to hydrate) | `client.v1.events.beta.customers.retrieveGovernance(id)` |
+| Ingest — calculated/incremental meter | `client.v1.usage.report` |
+| Ingest — raw-events meter (by `eventName`) | `client.v1.events.report` |
+
+Wart to expect: **the tree query lives under `client.v1.events.beta.customers`**, not `client.v1Beta.customers` like its siblings — a known naming inconsistency. Don't "fix" it by guessing a `v1Beta` equivalent; confirm exact operations via `search_docs`.
 
 **API vs UI — different assignment models, by design.** The API targets **one capability per assignment** (`(entity, featureId|currencyId)`). The dashboard UI intentionally **auto-creates an unlimited assignment across ALL capabilities** per entity (you edit limits per row). So UI- and API-created entities look different — don't be surprised, and don't "repair" one to match the other.
 
-**Via the Stigg MCP:** the MCP exposes only **`execute`** (sandboxed TypeScript over the SDK) and **`search_docs`** — no one-tool-per-endpoint mapping. Governance ops go through `execute` using the SDK namespaces above.
-
-### Fallback — when the MCP can't serve your environment
-
-The MCP backend binds to an environment via the server key. If it can't serve yours, MCP calls fail — a **401** on `execute`/`search_docs`, or a client-init error (*"STIGG_API_KEY … is missing or empty."*). Not transient, not a reason to stop: take request shapes from `search_docs` (or the Mintlify docs — reading needs no execute backend) and call the **REST API directly** with your `X-API-KEY` (`/api/v1` for usage/events, `/api/v1-beta` for governance; shapes match the SDK).
-
-A **401 on `execute` while `search_docs` works** usually means a **staging key** — the execute backend targets prod. If a direct REST call to `api.stigg.io` also 401s, retry against **`api-staging.stigg.io`**.
+**Via the Stigg MCP:** the MCP exposes only **`execute`** (sandboxed TypeScript over the SDK) and **`search_docs`** — no one-tool-per-endpoint mapping. Governance ops go through `execute` using the SDK namespaces above. Connection, keys, and environment setup are the **`stigg-mcp`** skill's job — if `execute` or `search_docs` won't connect, that's where the troubleshooting lives, not here.
 
 ## When NOT to Use This Skill
 
@@ -171,11 +169,11 @@ A **401 on `execute` while `search_docs` works** usually means a **staging key**
 | Debugging "child has budget but is blocked" as a bug | Ancestor semantics: any exhausted ancestor blocks the whole subtree. Check the tree upward. |
 | Defining more than 2 attribution keys, or >4 hierarchy levels | Hard limits. Redesign the model (e.g. fold a level into `scopeEntityIds`). |
 | Reporting usage without attribution-key dimensions | Usage won't attribute to any entity — budgets never accrue. Design dimensions up front. |
-| Always calling `POST /api/v1/usage`, or always `POST /api/v1/events` | It's a meter-type fork. Calculated/incremental → `usage.report`; raw-events → `events.report` (reportEvent, by `eventName`). If `usage.report` returns `CannotReportUsageForEntitlementWithMeterError`, switch to reportEvent. |
+| Always calling `usage.report`, or always `events.report` | It's a meter-type fork. Calculated/incremental → `usage.report`; raw-events → `events.report` (reportEvent, by `eventName`). If `usage.report` returns `CannotReportUsageForEntitlementWithMeterError`, switch to reportEvent. |
 | Passing a `featureId` to reportEvent | reportEvent targets the meter by `eventName` (+`idempotencyKey`), not `featureId`; attribution rides in `dimensions`. |
 | Creating an assignment and expecting checks to pass | Assignment upsert does no entitlement validation. The feature must be entitled via an active subscription first (permanent 1.0↔2.0 ordering), else check denies with `NoActiveSubscription`/`NoFeatureEntitlementInSubscription`. |
 | Reading the tree and getting `null` limits/usage | Tree-only mode. Pass `featureIds`/`currencyIds` to hydrate config + usage. |
-| Assuming a 401 / missing-key MCP error means "stop" | The MCP backend may not serve your key's environment (often a staging key). Take shapes from `search_docs`/docs and call REST directly with `X-API-KEY`. |
+| Treating an MCP connection error as a governance problem | Connection/setup issues (bad key, wrong environment) are `stigg-mcp`'s domain — fix them there, then re-run the governance op. |
 | Re-parenting a node that still has children | Re-parent is leaf-only — a non-leaf move is rejected (surfaces as an opaque 500, not transient). Move/archive children first, then move the former parent. |
 | Assuming archive is leaves-only | It isn't — archiving a parent orphans its active children. Archive/re-home descendants bottom-up yourself; the platform won't stop you. |
 | Modeling an entity's parent via `metadata` | `metadata` is free-form and structural-role-free. Hierarchy is `parentId` on the assignment only. |

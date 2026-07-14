@@ -14,38 +14,40 @@ A call with no attribution-key dimensions attributes to no entity — customer-l
 
 ### Calculated / incremental meters → `usage.report`
 
-Features whose usage your app computes and reports directly use **`POST /api/v1/usage`** (SDK `client.v1.usage.report`): a **synchronous** report that increments the counter and rolls up the tree immediately. The response echoes the new `currentUsage`. `featureId` accepts either a metered feature id **or** a credit currency id.
+Features whose usage your app computes and reports directly use **`client.v1.usage.report`** (run via the MCP `execute` tool): a **synchronous** report that increments the counter and rolls up the tree immediately. The response echoes the new `currentUsage`. `featureId` accepts either a metered feature id **or** a credit currency id.
 
-```jsonc
-// POST /api/v1/usage — calculated/incremental meters; required: customerId, featureId, value
-{
-  "usages": [{
-    "customerId": "customer-123",
-    "featureId": "feature-ai-tokens",
-    "value": 1250,
-    "dimensions": { "projectId": "proj-atlas", "regionId": "eu-west" }
-  }]
-}
-// → 201; data[].currentUsage reflects the rolled-up total (ancestors included)
+```ts
+// Shapes are illustrative — confirm exact fields via search_docs first.
+// Calculated/incremental meters; required: customerId, featureId, value.
+await client.v1.usage.report({
+  usages: [{
+    customerId: 'customer-123',
+    featureId: 'feature-ai-tokens',
+    value: 1250,
+    dimensions: { projectId: 'proj-atlas', regionId: 'eu-west' },
+  }],
+});
+// → response.currentUsage reflects the rolled-up total (ancestors included)
 ```
 
 ### Raw-events meters → `events.report` (reportEvent)
 
-Features backed by an **event meter** (Stigg aggregates raw events — count/sum/unique — into usage) **cannot** be fed via `usage.report`; they **require** **`POST /api/v1/events`** (SDK `client.v1.events.report`). This is the current reality — usage-reporting events for these features is not supported. It's **high-volume, eventually-consistent** (~seconds of lag).
+Features backed by an **event meter** (Stigg aggregates raw events — count/sum/unique — into usage) **cannot** be fed via `usage.report`; they **require** **`client.v1.events.report`** (reportEvent, run via the MCP `execute` tool). This is the current reality — usage-reporting events for these features is not supported. It's **high-volume, eventually-consistent** (~seconds of lag).
 
 The event does **not** carry a `featureId`. The meter is matched by **`eventName`** (must equal the meter's configured event); `idempotencyKey` dedupes; **entity attribution rides in `dimensions`**.
 
-```jsonc
-// POST /api/v1/events — raw-events meters; no featureId — the meter is matched by eventName
-{
-  "events": [{
-    "customerId": "customer-123",
-    "eventName": "ai-tokens-consumed",
-    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "dimensions": { "projectId": "proj-atlas", "regionId": "eu-west" }
-  }]
-}
-// → 202 accepted; accrues asynchronously
+```ts
+// Shapes are illustrative — confirm exact fields via search_docs first.
+// Raw-events meters; no featureId — the meter is matched by eventName.
+await client.v1.events.report({
+  events: [{
+    customerId: 'customer-123',
+    eventName: 'ai-tokens-consumed',
+    idempotencyKey: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    dimensions: { projectId: 'proj-atlas', regionId: 'eu-west' },
+  }],
+});
+// → accepted; accrues asynchronously
 ```
 
 ### Picking the path — try, then fall back
@@ -54,7 +56,7 @@ Meter type is **not reliably readable via the API** — the feature's `meterType
 
 ## Access — the entitlements check
 
-Gate requests with the standard entitlements check — `GET /api/v1-beta/customers/{customerId}/entitlements/check` (SDK `client.v1Beta.customers.entitlements.check`). Pass `featureId` **or** `currencyId` (not both), an optional `requestedUsage` (defaults to 1), and the attribution `dimensions`. When governance is enabled for the account, the **governance chain enriches the check** — no separate "governance check" call exists, and the endpoint is **never** gated by the enablement flag.
+Gate requests with the standard entitlements check — `client.v1Beta.customers.entitlements.check` (run via the MCP `execute` tool). Pass `featureId` **or** `currencyId` (not both), an optional `requestedUsage` (defaults to 1), and the attribution `dimensions`. When governance is enabled for the account, the **governance chain enriches the check** — no separate "governance check" call exists, and the endpoint is **never** gated by the enablement flag.
 
 The response is `{ isGranted, type, accessDeniedReason, usageLimit, currentUsage, chains: [...] }`. Each `chains[][]` node carries `entityId`, `usageLimit`, `currentUsage`, and its own `isGranted` — to find the binding constraint on a denial, flatten `chains` and pick the first node with `isGranted: false`.
 
@@ -80,11 +82,13 @@ A leaf with a fresh budget of its own is still denied if any ancestor above it i
 
 ## Balances — the governance tree query
 
-```text
-GET /api/v1-beta/customers/{customerId}/governance      (X-API-KEY)
-    ?featureIds=<id>&featureIds=<id>&currencyIds=<id>    (see below)
-SDK: client.v1.events.beta.customers.retrieveGovernance(customerId)
-     — yes, under v1.events.beta, not v1Beta; known naming inconsistency.
+```ts
+// Run via the MCP execute tool. Confirm the exact call shape via search_docs.
+client.v1.events.beta.customers.retrieveGovernance(customerId, {
+  // featureIds / currencyIds hydrate config + usage (see below); repeat for several.
+  featureIds: ['<id>'], currencyIds: ['<id>'],
+});
+// — yes, under v1.events.beta, not v1Beta; known naming inconsistency.
 ```
 
 Returns the customer's governance **tree**: entity nodes with their **usage configuration** (the assignments) and **current usage**. Remaining budget per assignment = `usageLimit − currentUsage`.
