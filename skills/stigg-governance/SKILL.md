@@ -13,23 +13,10 @@ All Stigg API actions in this skill run **through the Stigg MCP** — the `execu
 
 ## Step 0 — Preflight: Is Governance Enabled? (do this FIRST)
 
-Governance is **account-gated**. Before any governance work, run one governance operation via the MCP `execute` tool (the tree query is a safe read) and check the response:
+Run ONE probe via the MCP `execute` tool: `client.v1Beta.entityTypes.list()` (no customer id needed).
 
-- **HTTP 403** whose error `code` is **`GovernanceNotEnabled`** — key on the code, not the message. The body looks like this (message is illustrative and i18n-fragile, so don't match on it):
-
-  ```json
-  {"code":"GovernanceNotEnabled","message":"Governance is not enabled for this account. Please contact Stigg to enable Governance."}
-  ```
-
-  → **Stop.** Tell the user to contact Stigg to enable Governance for their account. Do **not** retry, do **not** try alternate endpoints or keys, and do **not** guess at workarounds — every governance endpoint is gated by the same flag.
-
-- **HTTP 200 with empty data** → governance is **enabled but not configured yet**. Proceed to model entity types, entities, and assignments.
-
-The gate fires **before customer resolution**, so a **placeholder/fake customer id is a valid preflight probe** — you don't need to provision a real customer first; the governance tree query on any id returns the 403 (or the empty 200) purely off the account flag.
-
-To confirm **"not enabled ≠ connection problem,"** pair the probe with a non-governance read like `customers.list`: if that succeeds but the governance call 403s, it's the account feature flag, not your setup. (Genuine connection/auth failures are `stigg-mcp`'s domain, not this skill's.)
-
-The entitlements **check** is **never** gated — entitlement checks keep working regardless of governance enablement.
+- Fails with error `code` **`GovernanceNotEnabled`** → **STOP.** Tell the user to contact Stigg to enable Governance. Do not retry or work around it.
+- Succeeds → proceed to Step 1. An empty list is expected — nothing is configured yet.
 
 ## Step 1 — Elicit the Model: ASK, Don't Assume (do this BEFORE defining entity types)
 
