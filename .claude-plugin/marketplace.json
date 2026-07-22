@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "stigg",
-      "description": "Stigg skills for AI-assisted dev — pricing, plans, features, entitlements, subscriptions, credits, widgets, webhooks. Load the `stigg` umbrella first; it routes to the right pillar.",
+      "description": "Stigg skills for AI-assisted dev — pricing, plans, features, entitlements, subscriptions, credits, governance, widgets, webhooks. Load the `stigg` umbrella first; it routes to the right pillar.",
       "author": {
         "name": "Stigg",
         "url": "https://stigg.io"

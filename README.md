@@ -14,7 +14,7 @@ The skills ship as a Claude Code plugin via Stigg's marketplace:
 # Add the Stigg marketplace
 /plugin marketplace add stiggio/skills
 
-# Install the Stigg plugin (all 11 skills)
+# Install the Stigg plugin (all 12 skills)
 /plugin install stigg@stigg-marketplace
 ```
 
@@ -39,6 +39,7 @@ npx skills add stiggio/skills --all
 | `stigg-entitlements` | Runtime gating, raw-events vs calculated-usage, cache and fallback strategy, promotional entitlements |
 | `stigg-subscriptions` | Lifecycle ops — provision, preview, update, cancel, trials, multi-active subscriptions, plan-version migration |
 | `stigg-credits` | Credit currencies, grants, ledger, consumption logic, custom formulas, auto-recharge, seat-based pools, billing integration |
+| `stigg-governance` | Per-entity budget enforcement — entity types with attribution keys, entity hierarchies, usage-limit assignments per feature or credit currency, governance tree balances |
 | `stigg-widgets` | Drop-in UI — paywall, customer portal, checkout, credit widgets — driven by the live Storybook index |
 | `stigg-webhooks` | Receive Stigg events — signature verification, payload envelope, retry semantics, idempotency, handler skeleton |
 | `stigg-pricing-expert` | Advisory — picks the right monetization model and hands off to implementation skills |
