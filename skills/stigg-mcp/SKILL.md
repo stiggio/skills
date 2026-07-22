@@ -151,3 +151,4 @@ A current, terse tool listing is in `references/mcp-tools.md`. **Do not memorize
 | Agent acted on production by mistake | Only the sandbox key should be in the config during dev. Remove the prod entry. |
 | Picked the MCP for a CI script | Use the CLI for CI. The MCP is non-deterministic by design. |
 | Embedded the key in a checked-in config | Use env vars or your client's secret store. Rotate the leaked key immediately. |
+| Misread an `execute` `isError:true` from a TypeScript typecheck rejection as an account/permission failure | `execute` runs sandboxed TypeScript — a typecheck error means your snippet doesn't compile, not that the API or key is wrong. Fix the TS and re-run. |
