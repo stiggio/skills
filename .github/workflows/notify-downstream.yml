@@ -1,0 +1,36 @@
+name: notify-downstream
+
+# On every push to master, notify the downstream mirror to sync. Uses a GitHub App
+# token minted at runtime (short-lived, attributed to the App's bot) so no long-lived
+# credential is stored. The App key lives in the master-only `publish` environment,
+# so only master runs can read it.
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  notify:
+    if: github.repository == 'stiggio/skills'   # never acts in a fork or mirror
+    runs-on: ubuntu-latest
+    environment: publish
+    steps:
+      - name: Mint token for downstream mirror
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.SKILLS_SYNC_APP_ID }}
+          private-key: ${{ secrets.SKILLS_SYNC_APP_PRIVATE_KEY }}
+          owner: stiggio
+          repositories: ${{ secrets.MIRROR_TARGET_REPO }}
+
+      - name: Dispatch mirror
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET: ${{ secrets.MIRROR_TARGET_REPO }}
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/stiggio/$TARGET/dispatches" \
+            -d '{"event_type":"upstream-updated"}'
