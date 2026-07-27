@@ -45,6 +45,15 @@ npx skills add stiggio/skills --all
 | `stigg-pricing-expert` | Advisory — picks the right monetization model and hands off to implementation skills |
 | `stigg-recipes` | Composed end-to-end workflows — freemium, checkout, hybrid pricing, AI-credits monetization, trial with addons, payment links |
 
+## Staying up to date
+
+Skills are delivered as the `stigg` plugin via the `stigg-marketplace`. To get the latest:
+
+- Enable auto-update: `/plugin` → Marketplaces → toggle **Enable auto-update** for `stigg-marketplace`, then `/reload-plugins`.
+- Or update manually: `/plugin marketplace update stigg-marketplace` then `/reload-plugins`.
+
+Updates apply per plugin (all Stigg skills move together), and only when a new version is released.
+
 ## Links
 
 - [Stigg](https://stigg.io)
