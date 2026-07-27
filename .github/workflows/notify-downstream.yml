@@ -9,6 +9,8 @@ on:
   push:
     branches: [master]
 
+permissions: {}   # job uses a GitHub App token, not GITHUB_TOKEN
+
 jobs:
   notify:
     if: github.repository == 'stiggio/skills'   # never acts in a fork or mirror
@@ -21,16 +23,18 @@ jobs:
         with:
           app-id: ${{ secrets.SKILLS_SYNC_APP_ID }}
           private-key: ${{ secrets.SKILLS_SYNC_APP_PRIVATE_KEY }}
-          owner: stiggio
+          owner: ${{ github.repository_owner }}
           repositories: ${{ secrets.MIRROR_TARGET_REPO }}
 
       - name: Dispatch mirror
         env:
           TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ github.repository_owner }}
           TARGET: ${{ secrets.MIRROR_TARGET_REPO }}
         run: |
           curl -sf -X POST \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/stiggio/$TARGET/dispatches" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/$OWNER/$TARGET/dispatches" \
             -d '{"event_type":"upstream-updated"}'
