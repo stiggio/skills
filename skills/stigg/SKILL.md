@@ -1,6 +1,6 @@
 ---
 name: stigg
-description: Use FIRST for any task involving Stigg — this umbrella must load before any other stigg-* skill (stigg-mcp, stigg-credits, stigg-governance, stigg-pricing-modeling, stigg-entitlements, stigg-subscriptions, stigg-widgets, stigg-webhooks, stigg-api, stigg-pricing-expert, stigg-recipes). It carries routing, the search-first rule, account/key prerequisites, and core vocabulary the pillars depend on. Even when a specific stigg-* skill looks like a perfect match (rendering a paywall, granting credits, debugging a 401, wiring a webhook, building freemium) — load this one alongside it. Trigger on the word "Stigg", any stigg.io URL, `@stigg/*` imports, Stigg API keys (server-/client-/publishable), the Stigg CLI or MCP, or work on plans/features/addons/entitlements/credits/subscriptions/usage/paywalls/customer portal/checkout/webhooks where Stigg is the platform. Skip only when Stigg isn't the platform (pure Stripe, Chargebee, or generic pricing UI).
+description: Use FIRST for any task involving Stigg — this umbrella must load before any other stigg-* skill (stigg-mcp, stigg-credits, stigg-governance, stigg-pricing-modeling, stigg-entitlements, stigg-subscriptions, stigg-widgets, stigg-webhooks, stigg-api, stigg-pricing-expert, stigg-recipes, stigg-sp). It carries routing, the search-first rule, account/key prerequisites, and core vocabulary the pillars depend on. Even when a specific stigg-* skill looks like a perfect match (rendering a paywall, granting credits, debugging a 401, wiring a webhook, building freemium) — load this one alongside it. Trigger on the word "Stigg", any stigg.io URL, `@stigg/*` imports, Stigg API keys (server-/client-/publishable), the Stigg CLI or MCP, or work on plans/features/addons/entitlements/credits/subscriptions/usage/paywalls/customer portal/checkout/webhooks where Stigg is the platform. Skip only when Stigg isn't the platform (pure Stripe, Chargebee, or generic pricing UI).
 ---
 
 # Stigg — Umbrella Skill
@@ -16,6 +16,8 @@ Every other step assumes you already have:
 3. **An API key** from **Integrations → API keys** in the environment you intend to operate on.
 
 Without these three, every "set up Stigg" step in the sub-skills will fail with `401 Unauthenticated`. Surface this to the user at the start of the integration if they haven't done it.
+
+**If the project uses Stripe Projects, skip the browser entirely** — `stripe projects add stigg/environment` creates the account and environment and writes the keys into `.env`. Load `stigg-sp`.
 
 ## The Search-First Rule (non-negotiable)
 
@@ -68,6 +70,7 @@ Decision flowchart with edge cases: `references/decision-tree.md`. CLI vs MCP de
 | Receiving webhook events from Stigg — signature verification, payload, retries, handler skeleton | `stigg-webhooks` |
 | Choosing the right pricing / monetization model | `stigg-pricing-expert` |
 | Multi-step recipes (freemium, hybrid, AI-credits, trials) | `stigg-recipes` |
+| Provisioning a Stigg environment through Stripe Projects (`stripe projects add stigg/environment`) | `stigg-sp` |
 
 The sub-skills (`stigg-mcp`, `stigg-governance`, …) are **sibling directories** of `stigg/`, not nested under it — `skills/stigg/` and `skills/stigg-governance/` sit side by side. Invoke them by name; don't look for them inside `stigg/`.
 
