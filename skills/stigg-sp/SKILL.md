@@ -25,11 +25,17 @@ Stripe encrypts the credentials into its Secret Store and syncs them to `.env`:
 | Variable | What it is |
 |---|---|
 | `STIGG_SERVER_API_KEY` | Full-access **secret** key (`server-`). Backend only — never ship it in a client bundle, commit it, or log it. |
-| `STIGG_CLIENT_API_KEY` | Publishable read-only key (`client-`). Safe in frontend code. |
+| `STIGG_CLIENT_API_KEY` | Publishable read-only key (`client-`). Not a secret, so it can ship in a browser bundle — but on its own it lets anyone read any customer's entitlements, so pair it with a `customerToken` before production (see below). |
 | `STIGG_ENVIRONMENT_ID` | The provisioned environment's id. |
 | `STIGG_ENVIRONMENT_SLUG` | Its slug, as it appears in the dashboard. |
 
 Keys do not expire. Rotate them with `stripe projects rotate` rather than by hand.
+
+## Before you write integration code
+
+Search the live docs first — the Stigg MCP server, the Mintlify Stigg docs MCP, or
+`https://docs.stigg.io/llms.txt`. Stigg's API surface moves, and the snippets below are a starting
+shape rather than a substitute for checking the current one.
 
 ## Wire the backend
 
@@ -95,10 +101,17 @@ Report usage only *after* the underlying work succeeded.
 npm install @stigg/react-sdk
 ```
 
+Bundlers do not expose `STIGG_CLIENT_API_KEY` to the browser under that name. Copy the provisioned
+value into whichever public variable your framework requires — `VITE_STIGG_CLIENT_API_KEY` for Vite,
+`REACT_APP_STIGG_CLIENT_API_KEY` for Create React App, `NEXT_PUBLIC_STIGG_CLIENT_API_KEY` for Next.js
+— or pass it from the server. Reading `process.env.STIGG_CLIENT_API_KEY` in browser code yields
+`undefined`.
+
 ```typescript
 import { StiggProvider } from '@stigg/react-sdk';
 
-<StiggProvider apiKey={process.env.STIGG_CLIENT_API_KEY} customerId="customer-demo-01">
+// Vite; use the public variable your framework requires.
+<StiggProvider apiKey={import.meta.env.VITE_STIGG_CLIENT_API_KEY} customerId="customer-demo-01">
   {children}
 </StiggProvider>;
 ```
@@ -109,9 +122,12 @@ production, sign a `customerToken` server-side and pass it alongside the custome
 
 ## Next
 
-Give the agent live access to the environment that was just provisioned:
+Give the agent live access to the environment that was just provisioned. Stripe writes the key to
+`.env`, which a shell does not export on its own — load it first, or paste the literal key, otherwise
+the header goes out empty and the connection is unusable.
 
 ```bash
+set -a && . ./.env && set +a
 claude mcp add stigg --header "X-API-KEY: $STIGG_SERVER_API_KEY" --transport http https://mcp.stigg.io
 ```
 
