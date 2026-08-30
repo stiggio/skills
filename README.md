@@ -42,6 +42,7 @@ npx skills add stiggio/skills --all
 | `stigg-governance` | Per-entity budget enforcement — entity types with attribution keys, entity hierarchies, usage-limit assignments per feature or credit currency, governance tree balances |
 | `stigg-widgets` | Drop-in UI — paywall, customer portal, checkout, credit widgets — driven by the live Storybook index |
 | `stigg-webhooks` | Receive Stigg events — signature verification, payload envelope, retry semantics, idempotency, handler skeleton |
+| `stigg-contracts` | Contract-based agreements — contracts, contract subscriptions, usage refresh, customer invoices |
 | `stigg-pricing-expert` | Advisory — picks the right monetization model and hands off to implementation skills |
 | `stigg-recipes` | Composed end-to-end workflows — freemium, checkout, hybrid pricing, AI-credits monetization, trial with addons, payment links |
 | `stigg-sp` | Provision a Stigg environment through Stripe Projects — `stripe projects add stigg/environment`, what the provisioned credentials are, first wiring of the server and client SDKs |
