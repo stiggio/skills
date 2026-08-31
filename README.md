@@ -14,7 +14,7 @@ The skills ship as a Claude Code plugin via Stigg's marketplace:
 # Add the Stigg marketplace
 /plugin marketplace add stiggio/skills
 
-# Install the Stigg plugin (all 12 skills)
+# Install the Stigg plugin (all 13 skills)
 /plugin install stigg@stigg-marketplace
 ```
 
@@ -44,6 +44,7 @@ npx skills add stiggio/skills --all
 | `stigg-webhooks` | Receive Stigg events — signature verification, payload envelope, retry semantics, idempotency, handler skeleton |
 | `stigg-pricing-expert` | Advisory — picks the right monetization model and hands off to implementation skills |
 | `stigg-recipes` | Composed end-to-end workflows — freemium, checkout, hybrid pricing, AI-credits monetization, trial with addons, payment links |
+| `stigg-sp` | Provision a Stigg environment through Stripe Projects — `stripe projects add stigg/environment`, what the provisioned credentials are, first wiring of the server and client SDKs |
 
 ## Staying up to date
 
