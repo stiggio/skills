@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/stiggio/skills/compare/v0.3.0...v0.4.0) (2026-08-31)
+
+
+### Features
+
+* **STIGG-9294:** add stigg-sp skill for Stripe Projects provisioning ([5204afd](https://github.com/stiggio/skills/commit/5204afde60101483b4ac2f9816d8950e47d0388c))
+* **STIGG-9294:** add stigg-sp skill for Stripe Projects provisioning ([1c3b11a](https://github.com/stiggio/skills/commit/1c3b11a8485f0396151d16acef3c3d0aa911dfe6))
+
+
+### Bug Fixes
+
+* **STIGG-9294:** correct the env var guidance in the stigg-sp skill ([29bfb37](https://github.com/stiggio/skills/commit/29bfb37a59271c7a6c7d7a159c8e4df674774717))
+
 ## [0.3.0](https://github.com/stiggio/skills/compare/v0.2.0...v0.3.0) (2026-07-22)
 
 
