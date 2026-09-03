@@ -72,7 +72,12 @@ Rules 1–4 are checked before anything is written, so a rejected create leaves 
 
 ## Errors
 
-Errors come back as `{ "code", "message" }`:
+Errors come back with a `code` and a `message`:
+
+```json
+{ "code": "InvalidArgumentError", "message": "Subscription sub-1 is not a custom subscription" }
+```
+
 
 | Code | Status | Usually means |
 |---|---|---|
