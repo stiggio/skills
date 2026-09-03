@@ -5,13 +5,13 @@ description: Use for contract-based (sales-led / enterprise) agreements in Stigg
 
 # Stigg Contracts — Entitlements and Invoicing
 
-**"A contract is an entitlement and an invoice. Stigg treats it as both."** A contract is the source of
-truth for a sales-led deal: what the customer can do, and what you charge for it.
+A contract is the source of truth for a sales-led deal: what the customer can do, and what you charge for
+it — an entitlement and an invoice, treated as both.
 
 A contract **groups subscriptions** for one customer. Those subscriptions grant the entitlements — the
 contract is the agreement they belong to, not a second entitlement mechanism. It can also carry a **billing
-contract**, which produces invoices. The two halves are independent: a contract with no billing contract
-still provisions access, a first-class way to use one.
+contract**, which produces invoices. The halves are independent — a contract with no billing contract still
+provisions access.
 
 > **The contract itself holds no commercial terms.** No price, quantity or commitment fields — only a name,
 > PO number, activation window, and its subscription links. **Negotiated price and committed volumes live on
@@ -32,8 +32,7 @@ Per the umbrella `stigg` skill: **search first.** Confirm shapes and field names
 ## How would you like to start?
 
 The dashboard asks exactly this, with two independent checkboxes — **Provision access** and **Set up
-billing** — so there are **three** ways to start. Establish which before anything else; it decides every
-step that follows.
+billing** — so there are **three** ways to start. Establish which first; it decides every step below.
 
 | Choice | What the contract does | Send |
 |---|---|---|
@@ -43,14 +42,13 @@ step that follows.
 
 `setupBilling` **defaults to `true`**, so provisioning-only is the one you must ask for explicitly.
 
-> **Vocabulary — recognize every name, say only one.** The UI says **"Provision access"** / **"Set up
-> billing"**; the docs say **"Entitlement provisioning"** / **"Billing contract"** / **"Both"**; the API
-> says `setupBilling`. Same three choices.
+> **Vocabulary — recognize every name, say only one.** UI: **"Provision access"** / **"Set up billing"**.
+> Docs: **"Entitlement provisioning"** / **"Billing contract"** / **"Both"**. API: `setupBilling`. Same
+> three choices.
 >
-> **Never show the user a field name — `setupBilling` included.** It's a wire detail they can't check
-> against anything on their screen. Say "provisioning only", "billing only" or "both" and keep the flag in
-> the request. That holds for every field below: the user confirms the deal in the words of their order
-> form, not in JSON.
+> **Never show the user a field name — `setupBilling` included.** Say "provisioning only", "billing only"
+> or "both" and keep the flag in the request. That holds for every field below: the user confirms the deal
+> in the words of their order form, not in JSON.
 
 ## The Operation Map
 
@@ -65,18 +63,17 @@ step that follows.
 
 # Provision Access
 
-Group custom subscriptions under a contract and grant entitlements. **No invoices** unless billing is set
-up too.
+Group custom subscriptions and grant their entitlements. **No invoices** unless billing is also
+set up.
 
 ## Prerequisites
 
-**Only custom plans qualify** — per the docs, provisioning supports custom plans and their add-ons, not
-self-service ones. Every subscription must be **custom-priced**: a `CUSTOM` plan, or a PAID plan provisioned
-with `paymentCollectionMethod: "NONE"`. A FREE-plan subscription can never join one; model the deal as a
-custom plan (`stigg-pricing-modeling`).
+**Only custom plans qualify** — custom plans and their add-ons, not self-service ones. Every subscription
+must be **custom-priced**: a `CUSTOM` plan, or a PAID plan provisioned with `paymentCollectionMethod:
+"NONE"`. A FREE-plan subscription can never join; model the deal as a custom plan
+(`stigg-pricing-modeling`).
 
-**Provision the customer's account first** — create the contract only once the customer exists in your
-application.
+**Provision the customer's account first** — create the contract only once the customer exists.
 
 Three server-side rules: **one subscription per product**, **one currency**, and every subscription
 **belongs to the contract's customer**.
@@ -84,12 +81,11 @@ Three server-side rules: **one subscription per product**, **one currency**, and
 ## Both: the order to do it in
 
 From an order form, **create the contract first and let it provision the subscriptions** — provisioning
-standalone leaves one live and unattached until a second write links it. Both contract-first shapes do it in
-one transaction: `POST /contracts` with `newSubscription` entries, or `POST /contracts/:id/subscriptions`
-with the same entries later.
+standalone leaves one live and unattached until a second write links it. Both contract-first shapes are one
+transaction: `POST /contracts` with `newSubscription` entries, or `POST /contracts/:id/subscriptions` with
+the same entries later.
 
-So: elicit → **create the contract with its subscriptions** → verify entitlements → price the billing
-lines.
+So: elicit → **create the contract with its subscriptions** → verify entitlements → price the lines.
 
 ## Create the Contract
 
@@ -149,8 +145,8 @@ contract is rejected, not moved.
 ## What Provisioning Alone Does NOT Give You
 
 No billing contract: `billingId` and `nextInvoice` stay `null`, no invoices are generated, and
-cancel-billing rejects the contract — the path working as intended, not a misconfiguration. Adding billing
-later is one-way; see `references/billing-and-invoices.md`.
+cancel-billing rejects the contract — working as intended, not a misconfiguration. Adding billing later is
+one-way; see `references/billing-and-invoices.md`.
 
 ## Contract State
 
@@ -209,21 +205,20 @@ Invoices and credit notes: same reference.
 
 Each mistake — the fix:
 
-- **Omitting `setupBilling` when you only want to provision access** — it defaults to `true`, creating a
-  billing contract. Send `false` explicitly.
-- **Attaching a self-serve subscription** — free/paid self-serve plans can't join a contract. Model the deal
-  as a custom plan.
-- **Using `PATCH subscriptionIds` to add one subscription** — it replaces the whole set, unlinking what you
-  omitted. Use `POST /contracts/:id/subscriptions`.
+- **Omitting `setupBilling` for provisioning only** — it defaults to `true`. Send `false` explicitly.
+- **Attaching a self-serve subscription** — free/paid self-serve plans can't join. Model the deal as a
+  custom plan.
+- **`PATCH subscriptionIds` to add one** — it replaces the whole set, unlinking what you omitted. Use
+  `POST /contracts/:id/subscriptions`.
 - **Archiving to remove a subscription** — it cancels the contract *and* every subscription on it. Detach
   instead.
-- **Treating the contract as the thing that grants entitlements** — the *subscriptions* grant them. An
-  empty contract grants nothing, and holds no price or quantity fields at all.
-- **Retrying a 409 on product duplication** — a modeling conflict, not a transient error. Detach the
-  existing subscription for that product first.
-- **Inventing a pricing table for a line item** — pricing comes from an existing pricing model, chosen by
-  id. List them and fill only the inputs the model exposes.
+- **Treating the contract as what grants entitlements** — the *subscriptions* do. An empty contract grants
+  nothing and holds no price or quantity fields.
+- **Retrying a 409 on product duplication** — a modeling conflict, not transient. Detach that product's
+  existing subscription first.
+- **Inventing a pricing table** — pricing comes from an existing model, chosen by id. Fill only the inputs
+  it exposes.
 - **Publishing without reading the summary** — afterwards those figures are what the customer is invoiced.
 - **Retrying `BillingContractEditBlocked`** — terminal. The change becomes a credit note or a new contract.
-- **Expecting a URL for an invoice PDF** — it comes back inline as base64; there is no durable link. Use
-  `GET .../pdf` to have Stigg wait for the render, or the generate/status pair to poll yourself.
+- **Expecting a URL for an invoice PDF** — it returns inline base64; no durable link. `GET .../pdf` waits
+  for the render, or poll the generate/status pair.
