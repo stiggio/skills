@@ -73,7 +73,7 @@ contract, `contractId` included:
 ```
 
 That is the id every later call keys on — `/contracts/{id}/billing/items`, `/terms`, `/settings`,
-`/summary`, `/invoice-schedule`, `/publish`. **Create once, then reuse it.** Editing a contract never
+`/summary`, `/invoice-schedule`, `/publish`, `/reopen`. **Create once, then reuse it.** Editing a contract never
 creates another one; only `POST /contracts` does.
 
 **Pass your own `contractId` on create and the call becomes idempotent** — send the same one again and you
@@ -109,7 +109,7 @@ not to pick whichever reading made the API call succeed.
 **Read it back and get agreement before you create anything.** Every line item, its pricing model and its
 rows, the period, the payment terms, the legal entity, the customer. There is a review step before
 publishing, but by then the contract exists and its line items have to be edited or deleted rather than
-simply written — and a published contract can only be amended or reopened. Getting it wrong is expensive in
+simply written — and a published contract has to be reopened first. Getting it wrong is expensive in
 a way most API mistakes aren't: billing and entitlements are the two things a customer notices immediately,
 one on an invoice and the other as access they do or don't have. The confirmation costs one message.
 
@@ -439,9 +439,18 @@ Billing edits apply to a **draft**. Once published:
 
 | Situation | What to do |
 |---|---|
-| Change a live contract's terms or items | **Amend it** — the contract stays live and its invoices are handled |
-| Rebuild it from scratch | **Reopen it** as a draft, then publish again |
+| Change a live contract's terms or items | **Reopen it** — `POST .../billing/reopen`, edit, publish again |
+| Amend in place, leaving it live | Dashboard only. No API exposes it — reopen instead |
 | `BillingContractEditBlocked` | **Terminal.** Issue a credit note (below) or a new contract |
+
+```bash
+curl -X POST "https://api.stigg.io/api/v1/contracts/contract-acme-2026/billing/reopen" \
+  -H "X-API-KEY: <YOUR_API_KEY>"
+```
+
+Reopening drops the contract's **draft** invoices; the next publish regenerates them. Issued, sent and paid
+invoices are never touched — and a contract carrying any of those is refused rather than reopened into a
+state they contradict. Reopening a draft does nothing, so a retry after a lost response is safe.
 
 A draft-only endpoint called on a live contract fails with `code: "BillingContractOperationRejected"` and a
 message naming both recovery paths, rather than picking one. That code covers every rejection that is yours
