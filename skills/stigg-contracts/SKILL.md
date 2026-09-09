@@ -20,9 +20,8 @@ provisions access.
 
 Per the umbrella `stigg` skill: **search first.** Confirm shapes and field names against the docs.
 
-> **No SDK surface.** Contracts are **not** in `@stigg/node-server-sdk` or `@stigg/js-client-sdk` — there
-> no `stigg.createContract(...)`. Use REST (canonical here, `https://api.stigg.io/api/v1`, header
-> `X-API-KEY`) or GraphQL.
+> **No SDK surface.** Contracts are **not** in `@stigg/node-server-sdk` or `@stigg/js-client-sdk`. Use
+> REST (canonical here, `https://api.stigg.io/api/v1`, header `X-API-KEY`) or GraphQL.
 
 > **Availability.** Not enabled for every account. If the endpoints 404, it isn't turned on — ask Stigg
 > rather than working around it.
@@ -38,7 +37,7 @@ billing** — so there are **three** ways to start. Establish which first; it de
 | **Billing only** | Priced line items and invoices, no subscriptions attached. | `setupBilling: true`, no `subscriptions` |
 | **Both** | Entitlements *and* invoicing on one agreement — the usual shape for a signed order form. | `setupBilling: true` + `subscriptions` |
 
-`setupBilling` **defaults to `true`**, so provisioning-only is the one you must ask for explicitly.
+`setupBilling` **defaults to `true`**, so provisioning-only must be asked for explicitly.
 
 > **Vocabulary — recognize every name, say only one.** UI: **"Provision access"** / **"Set up billing"**.
 > Docs: **"Entitlement provisioning"** / **"Billing contract"** / **"Both"**. API: `setupBilling`.
@@ -51,7 +50,7 @@ billing** — so there are **three** ways to start. Establish which first; it de
 
 | Op | Purpose | Reference |
 |---|---|---|
-| **Create, attach, detach, amend, archive, read** | The contract, its membership and metadata | inline below |
+| **Create, attach, detach, amend, archive, read** | The contract and its membership | inline below |
 | **Set up billing** | Terms, settings, priced line items, totals, publish | below + `references/billing-and-invoices.md` |
 | **Pick a pricing model** | Deal shape → model + rows, and the shapes with no model | `references/pricing-models.md` |
 | **Invoices** | List, filter, one invoice, the PDF, mark paid | `references/billing-and-invoices.md` |
@@ -180,10 +179,11 @@ true`, or enabled later on a provisioning-only one (one-way; billing is never re
    totals can be exactly right while the invoices are wrong — items agreeing on money but differing on
    *when* they bill split into extra invoices, and only the schedule shows it. Publishing refuses without a
    period, payment terms and a legal entity.
-5. **Billing edits apply to a draft.** To change a live contract, `POST .../billing/reopen`, edit, publish
-   again — that drops draft invoices only, and is refused outright once invoices have been issued or sent.
-   Rejections come back as `BillingContractOperationRejected` with the remedy in the message — read it
-   rather than retrying. `BillingContractEditBlocked` is terminal: credit note or new contract.
+5. **A live contract is amended, not rewritten.** `POST .../billing/edit-active` changes it in place — it
+   stays active and only affected invoices regenerate. Needs a body — `{}` if nothing to choose. The
+   line-item and terms endpoints instead reset a live contract to a draft, dropping unsent invoices.
+   Rejections are `BillingContractOperationRejected`, with the remedy in the message; read it rather than
+   retrying. `BillingContractEditBlocked` is terminal: credit note or new contract.
 
 Invoices and credit notes: same reference.
 
@@ -199,17 +199,17 @@ Invoices and credit notes: same reference.
 Each mistake — the fix:
 
 - **Omitting `setupBilling` for provisioning only** — defaults to `true`; send `false`.
-- **Attaching a self-serve subscription** — free/paid self-serve plans can't join. Use a custom plan.
+- **Attaching a self-serve subscription** — self-serve plans can't join. Use a custom plan.
 - **`PATCH subscriptionIds` to add one** — it replaces the whole set. Use `POST /contracts/:id/subscriptions`.
 - **Archiving to remove a subscription** — it cancels the contract *and* every subscription. Detach
   instead.
 - **Treating the contract as what grants entitlements** — the *subscriptions* do. An empty contract grants
-  nothing and holds no price or quantity fields.
+  nothing and holds no price or quantity.
 - **Retrying a 409 on product duplication** — a modeling conflict, not transient. Detach that product's
-  existing subscription first.
+  subscription first.
 - **Inventing a pricing table** — pricing comes from an existing model, chosen by id. Fill only the inputs
   it exposes.
 - **Publishing without reading the summary** — afterwards those figures are what the customer is invoiced.
 - **Retrying `BillingContractEditBlocked`** — terminal: a credit note or a new contract.
-- **Expecting a URL for an invoice PDF** — inline base64, no durable link. `GET .../pdf` waits for the
-  render, or poll the generate/status pair.
+- **Expecting a URL for an invoice PDF** — inline base64, no durable link. `GET .../pdf` waits, or poll
+  the generate/status pair.

@@ -73,7 +73,7 @@ contract, `contractId` included:
 ```
 
 That is the id every later call keys on — `/contracts/{id}/billing/items`, `/terms`, `/settings`,
-`/summary`, `/invoice-schedule`, `/publish`, `/reopen`. **Create once, then reuse it.** Editing a contract never
+`/summary`, `/invoice-schedule`, `/publish`, `/edit-active`. **Create once, then reuse it.** Editing a contract never
 creates another one; only `POST /contracts` does.
 
 **Pass your own `contractId` on create and the call becomes idempotent** — send the same one again and you
@@ -109,7 +109,7 @@ not to pick whichever reading made the API call succeed.
 **Read it back and get agreement before you create anything.** Every line item, its pricing model and its
 rows, the period, the payment terms, the legal entity, the customer. There is a review step before
 publishing, but by then the contract exists and its line items have to be edited or deleted rather than
-simply written — and a published contract has to be reopened first. Getting it wrong is expensive in
+simply written — and a published contract is amended rather than rewritten. Getting it wrong is expensive in
 a way most API mistakes aren't: billing and entitlements are the two things a customer notices immediately,
 one on an invoice and the other as access they do or don't have. The confirmation costs one message.
 
@@ -435,28 +435,35 @@ themselves with the invoice list below — that is the proof it worked, not the 
 
 ## The state model — where an agent gets stuck
 
-Billing edits apply to a **draft**. Once published:
+Once a contract is published, how you change it decides what happens to its invoices:
 
 | Situation | What to do |
 |---|---|
-| Change a live contract's terms or items | **Reopen it** — `POST .../billing/reopen`, edit, publish again |
-| Amend in place, leaving it live | Dashboard only. No API exposes it — reopen instead |
+| Change a live contract's terms or items | **Amend it in place** — `POST .../billing/edit-active` |
+| Rebuild it from a draft, losing unsent invoices | The line-item and terms endpoints reset it to a draft |
 | `BillingContractEditBlocked` | **Terminal.** Issue a credit note (below) or a new contract |
 
 ```bash
-curl -X POST "https://api.stigg.io/api/v1/contracts/contract-acme-2026/billing/reopen" \
-  -H "X-API-KEY: <YOUR_API_KEY>"
+curl -X POST "https://api.stigg.io/api/v1/contracts/contract-acme-2026/billing/edit-active" \
+  -H "X-API-KEY: <YOUR_API_KEY>" -H "content-type: application/json" \
+  -d '{ "includeCurrentInvoice": false }'
 ```
 
-Reopening drops the contract's **draft** invoices; the next publish regenerates them. Issued, sent and paid
-invoices are never touched — and a contract carrying any of those is refused rather than reopened into a
-state they contradict. Reopening a draft does nothing, so a retry after a lost response is safe.
+The contract **stays active**: the invoices affected by the change are regenerated, and its issued invoices
+and numbering survive. `includeCurrentInvoice` decides whether the change lands on the invoice currently
+open or the next one — a commercial choice with no default, so state it. What may change is validated: an
+ongoing period's dates cannot move.
+
+**Send a body even when you have nothing to choose** — `{}`. An omitted body is a 400.
+
+The line-item and terms endpoints behave differently on a live contract: they reset it to a **draft** and
+drop its unsent invoices, which the next publish regenerates. That is the dashboard's save behaviour, and
+it is destructive to invoice numbering — so to change a price without losing the invoice set, amend.
 
 A draft-only endpoint called on a live contract fails with `code: "BillingContractOperationRejected"` and a
-message naming both recovery paths, rather than picking one. That code covers every rejection that is yours
-to fix rather than to retry — not a draft, no line items yet, a pricing model that needs a metered item, an
-id that doesn't exist — so read the message: it names the remedy, and retrying the same call never helps. That is deliberate: the dashboard's own save silently reopens a published contract *and
-deletes its unsent documents*, which is fine behind a Save button and unacceptable for an API caller.
+message naming the remedy. That code covers every rejection that is yours to fix rather than to retry — not
+a draft, no line items yet, a pricing model that needs a metered item, an id that doesn't exist — so read
+the message: retrying the same call never helps.
 
 `BillingContractEditBlocked` fires when the contract's invoices have been sent, or carry usage reports.
 **Retrying will never work** — the amendment has to become a credit note or a new contract.
