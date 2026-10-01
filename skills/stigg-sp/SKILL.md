@@ -29,6 +29,16 @@ Stripe encrypts the credentials into its Secret Store and syncs them to `.env`:
 | `STIGG_ENVIRONMENT_ID` | The provisioned environment's id. |
 | `STIGG_ENVIRONMENT_SLUG` | Its slug, as it appears in the dashboard. |
 
+These names hold while the project has one Stigg resource. With two or more, Stripe prefixes each
+resource's variables with its resource name instead, and it **renames the existing resource's
+variables** when the second one is added. After `stripe projects add stigg/environment --name billing`
+the new resource's key is `BILLING_SERVER_API_KEY`, and one added earlier under the default name
+becomes `STIGG_ENVIRONMENT_SERVER_API_KEY` (its id `STIGG_ENVIRONMENT_ENVIRONMENT_ID`) — so code reading
+`STIGG_SERVER_API_KEY` gets `undefined`. Re-read `.env` after adding a resource. The snippets and the
+`claude mcp add` command below use the single-resource names; with two or more resources, substitute
+the prefixed names of the resource you are wiring (`BILLING_SERVER_API_KEY`, `BILLING_CLIENT_API_KEY`)
+and update any code still reading the old ones.
+
 Keys do not expire. Rotate them with `stripe projects rotate` rather than by hand.
 
 ## Before you write integration code
