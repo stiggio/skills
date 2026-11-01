@@ -10,16 +10,16 @@ Ingest never gates; it records consumption and rolls it up the tree. **Which end
 2. Your ingest call carries those keys' values in `dimensions`.
 3. Stigg matches dimension values to entity IDs and attributes the usage to the entity **and all of its ancestors**.
 
-A call with no attribution-key dimensions attributes to no entity — customer-level metering still works, but governance budgets never see it.
+A call with no attribution-key dimensions attributes to no entity — customer-level metering still works, but governance limits never see it.
 
-### Calculated / incremental meters → `usage.report`
+### Calculated / incremental meters → `v2.usage.report`
 
-Features whose usage your app computes and reports directly use **`client.v1.usage.report`** (run via the MCP `execute` tool): a **synchronous** report that increments the counter and rolls up the tree immediately. The response echoes the new `currentUsage`. `featureId` accepts either a metered feature id **or** a credit currency id.
+Features whose usage your app computes and reports directly use **`client.v2.usage.report`** (run via the MCP `execute` tool): a **synchronous** report that increments the counter and rolls up the tree immediately. `featureId` takes a feature id only; a credit currency id fails with `FeatureNotFound` (draw credits through the credits API, see `stigg-credits`). `client.v1.usage.report` is deprecated.
 
 ```ts
 // Shapes are illustrative — confirm exact fields via search_docs first.
 // Calculated/incremental meters; required: customerId, featureId, value.
-await client.v1.usage.report({
+const response = await client.v2.usage.report({
   usages: [{
     customerId: 'customer-123',
     featureId: 'feature-ai-tokens',
@@ -27,12 +27,14 @@ await client.v1.usage.report({
     dimensions: { projectId: 'proj-atlas', regionId: 'eu-west' },
   }],
 });
-// → response.currentUsage reflects the rolled-up total (ancestors included)
+// → response.data.usages[i].currentUsage: the feature's usage for the customer
+// → response.data.entities: the usage of each entity entitlement this report counted towards
+//   (entityId, scopeEntityIds, featureId or currencyId, currentUsage), ancestors included
 ```
 
 ### Raw-events meters → `events.report` (reportEvent)
 
-Features backed by an **event meter** (Stigg aggregates raw events — count/sum/unique — into usage) **cannot** be fed via `usage.report`; they **require** **`client.v1.events.report`** (reportEvent, run via the MCP `execute` tool). `usage.report` is not supported for these features. It's **high-volume, eventually-consistent** (~seconds of lag).
+Features backed by an **event meter** (Stigg aggregates raw events — count/sum/unique — into usage) **cannot** be fed via `v2.usage.report`; they **require** **`client.v1.events.report`** (reportEvent, run via the MCP `execute` tool). `v2.usage.report` is not supported for these features. It's **high-volume, eventually-consistent** (~seconds of lag).
 
 The event does **not** carry a `featureId`. The meter is matched by **`eventName`** (must equal the meter's configured event); `idempotencyKey` dedupes; **entity attribution rides in `dimensions`**.
 
@@ -52,66 +54,81 @@ await client.v1.events.report({
 
 ### Picking the path — check the feature's meter first
 
-Start from the feature's **meter configuration**, which is readable on the Feature type: `hasMeter` (Boolean), `meter` (the meter config — e.g. its `aggregation`), and `meterType`. A feature with a meter (`hasMeter: true` / a populated `meter`) is metered; a raw-events meter is one whose usage Stigg aggregates from reported events (count/sum/unique) — those take `events.report`, while a feature whose value your app computes and reports directly takes `usage.report`. **Confirm the exact fields and how to read the meter's aggregation source via `search_docs` before relying on them** (the surface may expose more of the meter config than shown here).
+Start from the feature's **meter configuration**, which is readable on the Feature type: `hasMeter` (Boolean), `meter` (the meter config — e.g. its `aggregation`), and `meterType`. A feature with a meter (`hasMeter: true` / a populated `meter`) is metered; a raw-events meter is one whose usage Stigg aggregates from reported events (count/sum/unique) — those take `events.report`, while a feature whose value your app computes and reports directly takes `v2.usage.report`. **Confirm the exact fields and how to read the meter's aggregation source via `search_docs` before relying on them** (the surface may expose more of the meter config than shown here).
 
-One caveat to know: the `meterType` enum alone (`NONE`/`INCREMENTAL`/`FLUCTUATING`) does **not** by itself flag "raw events" — a raw-events feature can report `meterType: INCREMENTAL` — so read the `meter` config, not just `meterType`. Because of that, treat the meter config as the **primary signal** and keep a definitive fallback: **if `usage.report` returns `CannotReportUsageForEntitlementWithMeterError`, the feature is a raw-events meter — switch to `events.report`.** Configuring event meters is a catalog concern — see `stigg-pricing-modeling` / `stigg-entitlements`.
+One caveat to know: the `meterType` enum alone (`NONE`/`INCREMENTAL`/`FLUCTUATING`) does **not** by itself flag "raw events" — a raw-events feature can report `meterType: INCREMENTAL` — so read the `meter` config, not just `meterType`. Because of that, treat the meter config as the **primary signal** and keep a definitive fallback: **if `v2.usage.report` returns `CannotReportUsageForEntitlementWithMeterError`, the feature is a raw-events meter — switch to `events.report`.** Configuring event meters is a catalog concern — see `stigg-pricing-modeling` / `stigg-entitlements`.
 
 ## Access — the entitlements check
 
-Gate requests with the standard entitlements check — `client.v1Beta.customers.entitlements.check` (run via the MCP `execute` tool). Pass `featureId` **or** `currencyId` (not both), an optional `requestedUsage` (defaults to 1), and the attribution `dimensions`. When governance is enabled for the account, the **governance chain enriches the check** — no separate "governance check" call exists, and the endpoint is **never** gated by governance enablement.
+Gate requests with the standard entitlements check — `client.v1.customers.checkEntitlement(customerId, { ... })` (run via the MCP `execute` tool). Pass `featureId` **or** `currencyId` (not both), an optional `requestedUsage` (defaults to 1), and the attribution `dimensions`. With `dimensions`, the **governance limits are checked too** — no separate "governance check" call exists, and the endpoint is **never** gated by governance enablement.
 
-The response is `{ isGranted, type, accessDeniedReason, usageLimit, currentUsage, chains: [...] }`. Each `chains[][]` node carries `entityId`, `usageLimit`, `currentUsage`, and its own `isGranted` — to find the binding constraint on a denial, flatten `chains` and pick the first node with `isGranted: false`.
+```ts
+// Shapes are illustrative — confirm exact fields via search_docs first.
+const { data } = await client.v1.customers.checkEntitlement('customer-123', {
+  featureId: 'api_calls',
+  requestedUsage: 1,
+  dimensions: { projectId: 'proj-atlas' },
+});
+// data.isGranted; data.chains is present when an entity entitlement applies to the request
+```
 
-An over-limit governance denial can surface as `accessDeniedReason: "RequestedUsageExceedingLimit"` — not only `"BudgetExceeded"`. Both mean the same thing (`isGranted: false` with the binding node's `isGranted: false` in the chain); which string you get depends on whether the *requested* usage alone would exceed the limit vs. the budget being already spent. Don't branch behavior on the string — read the chain for the binding node.
+The response is `{ data }`, where `data` is `{ isGranted, type, accessDeniedReason, usageLimit, currentUsage, chains: [...] }`. `chains` is present when at least one entity entitlement applies to the request, so it needs `dimensions` that resolve an entity. Each `chains[][]` node carries `entityId`, `scopeEntityIds`, `usageLimit` (`null` = unlimited), `currentUsage`, and its own `isGranted` — to find the binding constraint on a denial, flatten `chains` and pick the first node with `isGranted: false`.
+
+A governance denial reads `accessDeniedReason: "RequestedUsageExceedingLimit"`, with the binding node's `isGranted: false` in the chain. Each node runs one test: current usage plus the requested usage must stay within its limit.
+
+One exception has no denied node. A feature that consumes a credit currency is also held to that currency's entity limits, and those chains are not returned. If one of them is exhausted, the check denies with `InsufficientCredits` while every node in `chains` reads `isGranted: true`. So `InsufficientCredits` with no denied node means the currency's entity limit is the binding one.
 
 ### Prerequisite — depends on feature vs. credit
 
 The prerequisite differs by whether you're checking a feature or a credit currency, matching this skill's Prerequisites in `SKILL.md`:
 
-- **Feature check (`featureId`) — needs an entitling active subscription.** The governance chain is only consulted when the customer has an **ACTIVE subscription entitling the requested feature**. Without one, the check short-circuits before governance:
+- **Feature check (`featureId`) — needs an entitling active subscription.** The check can pass only when the customer has an **ACTIVE subscription entitling the requested feature**. Without one, it denies with a subscription reason. Governance still runs, so `chains` can still come back:
   - `accessDeniedReason: "NoActiveSubscription"` — no active subscription at all.
   - `accessDeniedReason: "NoFeatureEntitlementInSubscription"` — subscribed, but the plan doesn't include this feature.
-- **Credit check (`currencyId`) — no subscription required.** Credits run on a different path: the check reads the customer's **credit pool** directly, and credits can be granted and consumed with **no active subscription or assigned plan**. A credit denial is `accessDeniedReason: "InsufficientCredits"` (the pool is empty), **not** a subscription error. Set the credit currency + funded pool up via `stigg-credits`.
+- **Credit check (`currencyId`) — no subscription required.** Credits run on a different path: the check reads the customer's **credit pool** directly, and credits can be granted and consumed with **no active subscription or assigned plan**. An exhausted pool denies with `accessDeniedReason: "RequestedUsageExceedingLimit"`, and a currency the customer has no entitlement to denies with `"EntitlementNotFound"` — **not** a subscription error. Set the credit currency + funded pool up via `stigg-credits`.
 
-(Also seen: `CustomerNotFound`, `BudgetExceeded`.) Provisioning the catalog and subscription is out of scope here — set it up via `stigg-pricing-modeling` and `stigg-subscriptions` first, then layer budgets on top.
+(Also seen: `CustomerNotFound`.) Provisioning the catalog and subscription is out of scope here — set it up via `stigg-pricing-modeling` and `stigg-subscriptions` first, then layer limits on top.
 
 ### The ancestor rule
 
 > An entity's `hasAccess` is **blocked when ANY ancestor has hit its hard limit.**
 
-A leaf with a fresh budget of its own is still denied if any ancestor above it is exhausted. Corollaries:
+A leaf with a fresh limit of its own is still denied if any ancestor above it is exhausted. Corollaries:
 
-- Debugging "this entity has budget but is denied" means walking **up** the tree, not inspecting the leaf.
-- A parent's budget is a real ceiling on the whole subtree — children's limits can sum past it, and the parent still wins.
+- Debugging "this entity has limit left but is denied" means walking **up** the tree, not inspecting the leaf.
+- A parent's limit is a real ceiling on the whole subtree — children's limits can sum past it, and the parent still wins.
 
-## Balances — the governance tree query
+## Usage vs limit — the governance tree query
 
 ```ts
 // Run via the MCP execute tool. Confirm the exact call shape via search_docs.
-client.v1Beta.customers.retrieveGovernance(customerId, {
-  // featureIds / currencyIds hydrate config + usage (see below); repeat for several.
+// Still on v1Beta: the tree query has no v1 version. It returns pages.
+for await (const node of client.v1Beta.customers.governance.list(customerId, {
+  // featureIds / currencyIds hydrate config + usage (see below).
   featureIds: ['<id>'], currencyIds: ['<id>'],
-});
+})) {
+  // node.entityId, node.parentId, node.usageLimit, node.currentUsage, ...
+}
 ```
 
-Returns the customer's governance **tree**: entity nodes with their **usage configuration** (the assignments) and **current usage**. Remaining budget per assignment = `usageLimit − currentUsage`.
+Returns the customer's governance **tree** as pages of entity nodes with their **usage configuration** (the entity entitlements) and **current usage**. Remaining limit per row = `usageLimit − currentUsage`. Other filters: `entityTypeIds`, `entityIdSearch`, `minUtilization`, `scope` (`all` / `nodeWide` / `scoped`); sort with `sortBy` + `order`.
 
 ### Tree-only vs. hydrated mode
 
-By default the query is **tree-only**: each node comes back with `usageLimit`, `currentUsage`, `utilization`, and `cadence` set to `null` — you get the shape of the hierarchy but no budgets. To hydrate config + usage, pass the features and credit currencies you want:
+By default the query is **tree-only**: each node comes back with `usageLimit`, `currentUsage`, `utilization`, and `cadence` set to `null` — you get the shape of the hierarchy but no limits. To hydrate config + usage, pass the features and credit currencies you want:
 
-- `featureIds` — one or more metered-feature ids (repeat the param for several).
+- `featureIds` — one or more metered-feature ids.
 - `currencyIds` — one or more credit-currency ids.
 
-With those, each row fills in `usageLimit` / `currentUsage` / `utilization` / `cadence` for the matching feature or credit currency. Each row also carries `parentId` (reconstruct the tree client-side) and `scopeEntityIds` (`[]` = node-wide, non-empty = a dimension-scoped sub-budget).
+With those, each row fills in `usageLimit` / `currentUsage` / `utilization` / `cadence` for the matching feature or credit currency. Each row also carries `parentId` (reconstruct the tree client-side) and `scopeEntityIds` (`[]` = node-wide, non-empty = a dimension-scoped sub-limit).
 
 ### The lag contract
 
-The tree's usage figures come from a **read model that may lag by minutes**. Consequences:
+The tree's usage figures **may lag by a few seconds** (more for raw events, which Stigg aggregates first). Consequences:
 
 - **Never gate access from the tree.** Gating belongs to the entitlements check, which enforces in the access path.
-- Do use the tree for: budget dashboards, burn-down alerts ("proj-atlas at 80%"), reconciliation, admin UIs.
-- A freshly reported event not showing in the tree for a few minutes is expected behavior, not data loss.
+- Do use the tree for: limit dashboards, burn-down alerts ("proj-atlas at 80%"), reconciliation, admin UIs.
+- A freshly reported event not showing in the tree for a few seconds is expected behavior, not data loss.
 
 The **hot-path (enforcement) vs cold-path (observability)** split — why the check gates and the tree only observes — is spelled out in `enforcement-vs-observability.md`.
 
@@ -121,21 +138,21 @@ The **hot-path (enforcement) vs cold-path (observability)** split — why the ch
 per request:
   1. entitlements check (isGranted, entity-attributed)  → allow / deny
   2. do the work
-  3. ingest with attribution-key dimensions              → usage.report (calc/incremental)
+  3. ingest with attribution-key dimensions              → v2.usage.report (calc/incremental)
                                                             or events.report (raw-events, by eventName)
 
 out of band:
-  governance tree query (with featureIds/currencyIds) → dashboards, alerts, budget reviews
+  governance tree query (with featureIds/currencyIds) → dashboards, alerts, limit reviews
 ```
 
 ## Common mistakes
 
 Each mistake — the fix:
 
-- Polling the tree per-request to "pre-check" budget — Use the entitlements check; the tree lags and isn't an enforcement surface.
+- Polling the tree per-request to "pre-check" a limit — Use the entitlements check; the tree lags and isn't an enforcement surface.
 - Tree query returns `null` limits/usage — You're in tree-only mode. Pass `featureIds`/`currencyIds` to hydrate config + usage.
-- Always using one ingest endpoint for every feature — Fork by meter type: calc/incremental → `usage.report`; raw-events → `events.report`. On `CannotReportUsageForEntitlementWithMeterError` from `usage.report`, switch to reportEvent.
+- Always using one ingest endpoint for every feature — Fork by meter type: calc/incremental → `v2.usage.report`; raw-events → `events.report`. On `CannotReportUsageForEntitlementWithMeterError` from `v2.usage.report`, switch to reportEvent.
 - Passing `featureId` to reportEvent — reportEvent matches the meter by `eventName` (+`idempotencyKey`), not `featureId`; attribution is in `dimensions`.
-- Treating tree lag as an ingestion bug — Minutes of lag is the contract. Verify events in the Stigg app's Usage events view instead.
+- Treating tree lag as an ingestion bug — Seconds of lag is the contract. Verify events in the Stigg app's Usage events view instead.
 - Expecting a child to keep access after a parent exhausts — Any exhausted ancestor blocks the subtree.
 - Summing children's limits to infer the parent's capacity — Limits are independent gates, not an allocation ledger.
