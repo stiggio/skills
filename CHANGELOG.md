@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/stiggio/skills/compare/v0.4.0...v0.4.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **STIGG-9594:** correct governance limits, denial reasons and usage report in the skill ([8a37318](https://github.com/stiggio/skills/commit/8a3731875b741bba951097d097a739cd13635adb))
+
 ## [0.4.0](https://github.com/stiggio/skills/compare/v0.3.0...v0.4.0) (2026-10-01)
 
 
